@@ -121,7 +121,7 @@ For implementing another framework adapter, not application setup:
 
 ## Breakpoint Behavior
 
-Width and height use independent sets of inclusive minimum thresholds measured in terminal cells. Each axis must contain a zero threshold so every terminal size has a match. Names must be non-empty, and thresholds must be unique finite non-negative integers within their axis.
+Width and height use independent sets of inclusive minimum thresholds measured in terminal cells. A threshold is selected when the dimension is greater than or equal to it: for example, a width threshold of `60` matches at `width >= 60`. Each axis must contain a zero threshold so every terminal size has a match. Names must be non-empty, and thresholds must be unique finite non-negative integers within their axis.
 
 Declaration order does not affect matching. Each axis selects its highest satisfied threshold.
 

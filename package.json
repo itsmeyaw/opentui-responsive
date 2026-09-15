@@ -1,13 +1,16 @@
 {
   "name": "opentui-responsive",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Typed responsive breakpoints for OpenTUI.",
   "keywords": [
     "breakpoints",
+    "cli",
     "opentui",
     "reactjs",
     "responsive",
-    "solidjs"
+    "solidjs",
+    "terminal",
+    "tui"
   ],
   "license": "MIT",
   "repository": {
