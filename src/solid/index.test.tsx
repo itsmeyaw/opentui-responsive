@@ -4,7 +4,7 @@ import { expect, test } from "bun:test";
 import { createSignal } from "solid-js";
 
 import { defineBreakpoints } from "../core/index.ts";
-import { createResponsiveTui, ResponsiveTuiProviderError } from "./index.tsx";
+import { createResponsiveTui, ResponsiveTuiProviderError } from "./index.ts";
 
 const responsiveTui = createResponsiveTui(
   defineBreakpoints({

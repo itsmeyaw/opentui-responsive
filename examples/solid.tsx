@@ -1,7 +1,7 @@
 import { render } from "@opentui/solid";
 
 import { defineBreakpoints } from "../src/core/index.ts";
-import { createResponsiveTui } from "../src/solid/index.tsx";
+import { createResponsiveTui } from "../src/solid/index.ts";
 
 const breakpoints = defineBreakpoints({
   width: { narrow: 0, medium: 60, wide: 100 },

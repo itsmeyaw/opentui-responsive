@@ -12,7 +12,7 @@ const builds = await Promise.all([
     target: "node",
   }),
   Bun.build({
-    entrypoints: [`${import.meta.dir}/src/solid/index.tsx`],
+    entrypoints: [`${import.meta.dir}/src/solid/index.ts`],
     format: "esm",
     outdir: `${import.meta.dir}/dist/solid`,
     packages: "external",
