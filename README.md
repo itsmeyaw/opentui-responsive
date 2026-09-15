@@ -8,6 +8,8 @@ For OpenTUI Solid applications:
 
 ```sh
 bun add @itsmeyaw/opentui-responsive @opentui/solid solid-js
+# or
+npm install @itsmeyaw/opentui-responsive @opentui/solid solid-js
 ```
 
 Core-only consumers only need `@itsmeyaw/opentui-responsive`.
@@ -111,3 +113,21 @@ type HeightBreakpoint = BreakpointOf<typeof breakpoints, "height">;
 ## Packaging
 
 The package is ESM-only. `@itsmeyaw/opentui-responsive/core` and `@itsmeyaw/opentui-responsive/solid` are separate package entrypoints, and the package is marked side-effect free so modern bundlers can remove unused exports. Importing `/core` does not load Solid or OpenTUI.
+
+## Runtime support
+
+The package supports Bun 1.3.0 or later and Node.js 26.4.0 or later. Node.js applications must use ESM. CommonJS `require()` is not supported.
+
+The `/core` entrypoint is pure JavaScript and does not require native FFI:
+
+```sh
+node core-example.mjs
+```
+
+The `/solid` entrypoint inherits OpenTUI's native runtime requirements. Start Node.js applications that use it with:
+
+```sh
+node --experimental-ffi app.mjs
+```
+
+Use Bun 1.4.0 or later on native Windows arm64.
