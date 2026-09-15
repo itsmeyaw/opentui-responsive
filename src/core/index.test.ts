@@ -3,46 +3,82 @@ import { expect, test } from "bun:test";
 import { ResponsiveTuiConfigurationError, defineBreakpoints, type BreakpointOf } from "./index.ts";
 
 const breakpoints = defineBreakpoints({
-  sm: { width: 0, height: 0 },
-  md: { width: 60, height: 12 },
-  lg: { width: 100, height: 20 },
+  width: { narrow: 0, medium: 60, wide: 100 },
+  height: { short: 0, medium: 12, tall: 20 },
 });
 
-type Name = BreakpointOf<typeof breakpoints>;
-const name: Name = "sm";
-void name;
+type WidthName = BreakpointOf<typeof breakpoints, "width">;
+type HeightName = BreakpointOf<typeof breakpoints, "height">;
+const widthName: WidthName = "wide";
+const heightName: HeightName = "tall";
+void widthName;
+void heightName;
 
 if (Bun.env.TYPE_TESTS) {
-  // @ts-expect-error every tier requires both dimensions
-  defineBreakpoints({ sm: { width: 0 } });
-  // @ts-expect-error breakpoint names stay literal
-  const invalidName: Name = "xl";
-  void invalidName;
+  // @ts-expect-error both axis scales are required
+  defineBreakpoints({ width: { narrow: 0 } });
+  defineBreakpoints({
+    width: { narrow: 0 },
+    height: { short: 0 },
+    // @ts-expect-error unknown axes are rejected
+    depth: { shallow: 0 },
+  });
+  // @ts-expect-error breakpoint names stay specific to their axis
+  const invalidHeightName: HeightName = "wide";
+  void invalidHeightName;
+  const invalidHeightComparison =
+    // @ts-expect-error unconfigured height names cannot be compared
+    breakpoints.match({ width: 80, height: 12 }).height === "extra-tall";
+  void invalidHeightComparison;
 }
 
 test("matches the highest inclusive tier independently on each axis", () => {
-  expect(breakpoints.match({ width: 0, height: 0 })).toEqual({ width: "sm", height: "sm" });
-  expect(breakpoints.match({ width: 60, height: 12 })).toEqual({ width: "md", height: "md" });
-  expect(breakpoints.match({ width: 120, height: 10 })).toEqual({ width: "lg", height: "sm" });
-  expect(breakpoints.match({ width: 99, height: 20 })).toEqual({ width: "md", height: "lg" });
+  expect(breakpoints.match({ width: 0, height: 0 })).toEqual({ width: "narrow", height: "short" });
+  expect(breakpoints.match({ width: 60, height: 12 })).toEqual({
+    width: "medium",
+    height: "medium",
+  });
+  expect(breakpoints.match({ width: 120, height: 10 })).toEqual({
+    width: "wide",
+    height: "short",
+  });
+  expect(breakpoints.match({ width: 99, height: 20 })).toEqual({
+    width: "medium",
+    height: "tall",
+  });
+});
+
+test("matches independently sized scales by threshold value rather than declaration order", () => {
+  const unordered = defineBreakpoints({
+    width: { wide: 100, narrow: 0, medium: 60 },
+    height: { tall: 20, short: 0 },
+  });
+
+  expect(unordered.match({ width: 80, height: 24 })).toEqual({
+    width: "medium",
+    height: "tall",
+  });
 });
 
 test("rejects invalid breakpoint configurations with a typed error", () => {
   const invalid = [
     {},
-    { "": { width: 0, height: 0 } },
-    { "0": { width: 0, height: 0 } },
-    { sm: { width: 1, height: 0 } },
-    { sm: { width: 0, height: 1 } },
-    { sm: { width: 0 } },
-    { sm: { width: 0, height: 0, depth: 0 } },
-    { sm: { width: -1, height: 0 } },
-    { sm: { width: 0, height: 1.5 } },
-    { sm: { width: Number.NaN, height: 0 } },
-    { sm: { width: 0, height: Number.POSITIVE_INFINITY } },
-    { sm: { width: 0, height: 0 }, md: { width: 0, height: 12 } },
-    { sm: { width: 0, height: 0 }, md: { width: 60, height: 0 } },
-    { sm: { width: 0, height: 0 }, md: { width: 60, height: 12 }, lg: { width: 40, height: 20 } },
+    { width: { narrow: 0 } },
+    { height: { short: 0 } },
+    { width: {}, height: { short: 0 } },
+    { width: { narrow: 0 }, height: {} },
+    { width: [], height: { short: 0 } },
+    { width: { narrow: 0 }, height: "short" },
+    { width: { "": 0 }, height: { short: 0 } },
+    { width: { narrow: 1 }, height: { short: 0 } },
+    { width: { narrow: 0 }, height: { short: 1 } },
+    { width: { narrow: -1 }, height: { short: 0 } },
+    { width: { narrow: 0 }, height: { short: 1.5 } },
+    { width: { narrow: Number.NaN }, height: { short: 0 } },
+    { width: { narrow: 0 }, height: { short: Number.POSITIVE_INFINITY } },
+    { width: { narrow: 0, medium: 0 }, height: { short: 0 } },
+    { width: { narrow: 0 }, height: { short: 0, medium: 0 } },
+    { width: { narrow: 0 }, height: { short: 0 }, depth: { shallow: 0 } },
   ];
 
   for (const tiers of invalid) {

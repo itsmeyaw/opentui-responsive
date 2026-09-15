@@ -1,29 +1,30 @@
-export type BreakpointThreshold = {
-  readonly width: number;
-  readonly height: number;
-};
+export type BreakpointAxis = "width" | "height";
 
-export type BreakpointTiers = Readonly<Record<string, BreakpointThreshold>>;
+export type BreakpointScale = Readonly<Record<string, number>>;
+
+export type BreakpointScales = {
+  readonly width: BreakpointScale;
+  readonly height: BreakpointScale;
+};
 
 export type BreakpointViewport = {
   readonly width: number;
   readonly height: number;
 };
 
-export type BreakpointMatch<Name extends string = string> = {
-  readonly width: Name;
-  readonly height: Name;
+export type BreakpointMatch<Scales extends BreakpointScales = BreakpointScales> = {
+  readonly [Axis in BreakpointAxis]: Extract<keyof Scales[Axis], string>;
 };
 
-export type BreakpointDefinition<Tiers extends BreakpointTiers = BreakpointTiers> = {
-  readonly match: (viewport: BreakpointViewport) => BreakpointMatch<BreakpointOf<Tiers>>;
+export type BreakpointDefinition<Scales extends BreakpointScales = BreakpointScales> = {
+  readonly match: (viewport: BreakpointViewport) => BreakpointMatch<Scales>;
 };
 
-export type BreakpointOf<Input> =
-  Input extends BreakpointDefinition<infer Tiers>
-    ? Extract<keyof Tiers, string>
-    : Input extends BreakpointTiers
-      ? Extract<keyof Input, string>
+export type BreakpointOf<Input, Axis extends BreakpointAxis> =
+  Input extends BreakpointDefinition<infer Scales>
+    ? Extract<keyof Scales[Axis], string>
+    : Input extends BreakpointScales
+      ? Extract<keyof Input[Axis], string>
       : never;
 
 /* oxlint-disable effecttsgo/extends-native-error */
@@ -36,78 +37,85 @@ export class ResponsiveTuiConfigurationError extends Error {
   }
 }
 
-export const defineBreakpoints = <const Tiers extends BreakpointTiers>(
-  tiers: keyof Tiers extends never ? never : Tiers,
-): BreakpointDefinition<Tiers> => {
-  const entries = validateTiers(tiers) as [BreakpointOf<Tiers>, BreakpointThreshold][];
-  const [base, ...rest] = entries;
-  if (!base) throw new ResponsiveTuiConfigurationError("Breakpoint definitions cannot be empty.");
+export const defineBreakpoints = <const Scales extends BreakpointScales>(
+  scales: Scales & Record<Exclude<keyof Scales, BreakpointAxis>, never>,
+): BreakpointDefinition<Scales> => {
+  const entries = validateScales(scales);
 
   return {
-    match: (viewport) => {
-      let width = base[0];
-      let height = base[0];
-
-      for (const [name, threshold] of rest) {
-        if (viewport.width >= threshold.width) width = name;
-        if (viewport.height >= threshold.height) height = name;
-      }
-
-      return { width, height };
-    },
+    match: (viewport) => ({
+      width: matchScale<Extract<keyof Scales["width"], string>>(viewport.width, entries.width),
+      height: matchScale<Extract<keyof Scales["height"], string>>(viewport.height, entries.height),
+    }),
   };
 };
 
-const validateTiers = (tiers: unknown): [string, BreakpointThreshold][] => {
-  if (!isRecord(tiers) || Array.isArray(tiers)) {
+type ScaleEntry = readonly [name: string, threshold: number];
+type ValidatedScale = readonly [ScaleEntry, ...ScaleEntry[]];
+type ValidatedScales = Readonly<Record<BreakpointAxis, ValidatedScale>>;
+
+const breakpointAxes = ["width", "height"] as const;
+
+const validateScales = (scales: unknown): ValidatedScales => {
+  if (!isRecord(scales) || Array.isArray(scales)) {
     throw new ResponsiveTuiConfigurationError("Breakpoint definitions must be an object.");
   }
 
-  const entries = Object.entries(tiers);
-  if (entries.length === 0) {
-    throw new ResponsiveTuiConfigurationError("Breakpoint definitions cannot be empty.");
+  const unknown = Object.keys(scales).find(
+    (key) => !breakpointAxes.includes(key as BreakpointAxis),
+  );
+  if (unknown) {
+    throw new ResponsiveTuiConfigurationError(`Unknown breakpoint axis: ${unknown}.`);
   }
 
-  let previousWidth = -1;
-  let previousHeight = -1;
-  for (const [index, [name, threshold]] of entries.entries()) {
+  return {
+    width: validateScale("width", scales.width),
+    height: validateScale("height", scales.height),
+  };
+};
+
+const validateScale = (axis: BreakpointAxis, scale: unknown): ValidatedScale => {
+  if (!isRecord(scale) || Array.isArray(scale)) {
+    throw new ResponsiveTuiConfigurationError(`Breakpoint ${axis} scale must be an object.`);
+  }
+
+  const entries = Object.entries(scale);
+  if (entries.length === 0) {
+    throw new ResponsiveTuiConfigurationError(`Breakpoint ${axis} scale cannot be empty.`);
+  }
+
+  const thresholds = new Set<number>();
+  const validated: ScaleEntry[] = [];
+  for (const [name, threshold] of entries) {
     if (name.length === 0) {
       throw new ResponsiveTuiConfigurationError("Breakpoint names must be non-empty strings.");
     }
-    if (/^(0|[1-9]\d*)$/.test(name)) {
-      throw new ResponsiveTuiConfigurationError(
-        "Breakpoint names cannot be non-negative integers.",
-      );
-    }
-    if (!isRecord(threshold) || Array.isArray(threshold)) {
-      throw new ResponsiveTuiConfigurationError("Breakpoint thresholds must be objects.");
-    }
-
-    const unknown = Object.keys(threshold).find((key) => key !== "width" && key !== "height");
-    if (unknown) {
-      throw new ResponsiveTuiConfigurationError(`Unknown breakpoint threshold: ${unknown}.`);
-    }
-    if (!isThreshold(threshold.width) || !isThreshold(threshold.height)) {
+    if (!isThreshold(threshold)) {
       throw new ResponsiveTuiConfigurationError(
         "Breakpoint thresholds must be finite non-negative integers.",
       );
     }
-    if (index === 0 && (threshold.width !== 0 || threshold.height !== 0)) {
-      throw new ResponsiveTuiConfigurationError(
-        "The first breakpoint tier must have width and height thresholds of zero.",
-      );
+    if (thresholds.has(threshold)) {
+      throw new ResponsiveTuiConfigurationError(`Breakpoint ${axis} thresholds must be unique.`);
     }
-    if (threshold.width <= previousWidth || threshold.height <= previousHeight) {
-      throw new ResponsiveTuiConfigurationError(
-        "Breakpoint width and height thresholds must strictly increase.",
-      );
-    }
-
-    previousWidth = threshold.width;
-    previousHeight = threshold.height;
+    thresholds.add(threshold);
+    validated.push([name, threshold]);
   }
 
-  return entries as [string, BreakpointThreshold][];
+  if (!thresholds.has(0)) {
+    throw new ResponsiveTuiConfigurationError(`Breakpoint ${axis} scale must include zero.`);
+  }
+
+  return validated.sort((left, right) => left[1] - right[1]) as unknown as ValidatedScale;
+};
+
+const matchScale = <Name extends string>(value: number, entries: ValidatedScale): Name => {
+  let match = entries[0][0];
+  for (const [name, threshold] of entries) {
+    if (value < threshold) break;
+    match = name;
+  }
+  return match as Name;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

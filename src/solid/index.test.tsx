@@ -8,10 +8,20 @@ import { createResponsiveTui, ResponsiveTuiProviderError } from "./index.tsx";
 
 const responsiveTui = createResponsiveTui(
   defineBreakpoints({
-    compact: { width: 0, height: 0 },
-    wide: { width: 40, height: 10 },
+    width: { compact: 0, wide: 40 },
+    height: { short: 0, tall: 10 },
   }),
 );
+
+if (Bun.env.TYPE_TESTS) {
+  const breakpoint = responsiveTui.useResponsiveTui();
+  // @ts-expect-error width-only names cannot be compared with height
+  const widthNameComparedWithHeight = breakpoint().height === "wide";
+  // @ts-expect-error unconfigured height names cannot be compared
+  const invalidHeightComparison = breakpoint().height === "extra-tall";
+  void widthNameComparedWithHeight;
+  void invalidHeightComparison;
+}
 
 test("provides the initial breakpoint and updates it after a resize", async () => {
   const App = () => {
@@ -29,11 +39,11 @@ test("provides the initial breakpoint and updates it after a resize", async () =
 
   try {
     await setup.renderOnce();
-    expect(setup.captureCharFrame()).toContain("compact/compact");
+    expect(setup.captureCharFrame()).toContain("compact/short");
 
     setup.resize(40, 4);
     await setup.renderOnce();
-    expect(setup.captureCharFrame()).toContain("wide/compact");
+    expect(setup.captureCharFrame()).toContain("wide/short");
   } finally {
     setup.renderer.destroy();
   }
@@ -65,7 +75,7 @@ test("keeps children mounted when the breakpoint changes", async () => {
     setup.resize(40, 4);
     await setup.renderOnce();
 
-    expect(setup.captureCharFrame()).toContain("wide/compact:1");
+    expect(setup.captureCharFrame()).toContain("wide/short:1");
     expect(mounts).toBe(1);
   } finally {
     setup.renderer.destroy();
@@ -79,8 +89,8 @@ test("throws a typed error when used outside its provider", () => {
 test("keeps contexts created by different factories isolated", async () => {
   const otherResponsiveTui = createResponsiveTui(
     defineBreakpoints({
-      small: { width: 0, height: 0 },
-      large: { width: 40, height: 10 },
+      width: { small: 0, large: 40 },
+      height: { low: 0, high: 10 },
     }),
   );
   const App = () => {
