@@ -10,6 +10,12 @@ export type BreakpointScales = {
   readonly height: BreakpointScale;
 };
 
+type BreakpointScalesIncludingZero<Scales extends BreakpointScales> = {
+  readonly [Axis in BreakpointAxis]: 0 extends Scales[Axis][keyof Scales[Axis]]
+    ? Scales[Axis]
+    : never;
+};
+
 /** Terminal dimensions in cells. */
 export type BreakpointViewport = {
   readonly width: number;
@@ -46,7 +52,9 @@ export class ResponsiveTuiConfigurationError extends Error {
 
 /** Creates a validated breakpoint matcher for the framework adapters. */
 export const createBreakpointDefinition = <const Scales extends BreakpointScales>(
-  scales: Scales & Record<Exclude<keyof Scales, BreakpointAxis>, never>,
+  scales: Scales &
+    BreakpointScalesIncludingZero<Scales> &
+    Record<Exclude<keyof Scales, BreakpointAxis>, never>,
 ): BreakpointDefinition<Scales> => {
   const entries = validateScales(scales);
   const match = (viewport: BreakpointViewport): BreakpointMatch<Scales> => ({

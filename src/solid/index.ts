@@ -29,9 +29,9 @@ export class ResponsiveTuiProviderError extends Error {
 
 /** Creates a Solid provider and hook bound to one breakpoint definition. */
 export const createResponsiveTui = <const Scales extends BreakpointScales>(
-  scales: Scales & Record<Exclude<keyof Scales, "width" | "height">, never>,
+  scales: Parameters<typeof createBreakpointDefinition<Scales>>[0],
 ) => {
-  const breakpoints = createBreakpointDefinition(scales);
+  const breakpoints = createBreakpointDefinition<Scales>(scales);
   const ResponsiveTuiContext = createContext<ResponsiveBreakpointAccessor<Scales>>();
 
   const ResponsiveTUI = (props: ParentProps) => {

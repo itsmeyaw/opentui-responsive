@@ -17,6 +17,10 @@ void heightName;
 if (Bun.env.TYPE_TESTS) {
   // @ts-expect-error both axis scales are required
   createBreakpointDefinition({ width: { narrow: 0 } });
+  // @ts-expect-error width scale must include zero
+  createBreakpointDefinition({ width: { narrow: 1 }, height: { short: 0 } });
+  // @ts-expect-error height scale must include zero
+  createBreakpointDefinition({ width: { narrow: 0 }, height: { short: 1 } });
   createBreakpointDefinition({
     width: { narrow: 0 },
     height: { short: 0 },

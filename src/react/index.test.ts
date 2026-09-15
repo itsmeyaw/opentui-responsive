@@ -32,6 +32,8 @@ if (Bun.env.TYPE_TESTS) {
   breakpoint(["compact", "tall"]);
   // @ts-expect-error both axis scales are required
   createResponsiveTui({ width: { compact: 0 } });
+  // @ts-expect-error each axis scale must include zero
+  createResponsiveTui({ width: { compact: 1 }, height: { short: 0 } });
   // @ts-expect-error pair order is width then height
   breakpoint(["short", "wide"]);
   // @ts-expect-error pairs require both axes
@@ -156,9 +158,9 @@ test("throws a typed error when used outside its provider", async () => {
 });
 
 test("rejects invalid breakpoint scales when the factory is created", () => {
-  expect(() => createResponsiveTui({ width: { compact: 0 }, height: { short: 1 } })).toThrow(
-    ResponsiveTuiConfigurationError,
-  );
+  expect(() =>
+    createResponsiveTui({ width: { compact: 0 }, height: { short: 1 } } as never),
+  ).toThrow(ResponsiveTuiConfigurationError);
 });
 
 test("keeps contexts created by different factories isolated", async () => {
