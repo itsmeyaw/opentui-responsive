@@ -33,10 +33,25 @@ export type BreakpointPair<Scales extends BreakpointScales = BreakpointScales> =
   height: BreakpointMatch<Scales>["height"],
 ];
 
+/** Tests one axis or both axes against a named breakpoint relation. */
+export type BreakpointRelationMatcher<Scales extends BreakpointScales = BreakpointScales> = {
+  <Axis extends BreakpointAxis>(
+    viewport: BreakpointViewport,
+    axis: Axis,
+    name: BreakpointMatch<Scales>[Axis],
+  ): boolean;
+  (viewport: BreakpointViewport, pair: BreakpointPair<Scales>): boolean;
+};
+
 /** A validated breakpoint matcher for framework adapter implementations. */
 export type BreakpointDefinition<Scales extends BreakpointScales = BreakpointScales> = {
   readonly match: (viewport: BreakpointViewport) => BreakpointMatch<Scales>;
   readonly matches: (viewport: BreakpointViewport, pair: BreakpointPair<Scales>) => boolean;
+  readonly below: BreakpointRelationMatcher<Scales>;
+  readonly atMost: BreakpointRelationMatcher<Scales>;
+  readonly only: BreakpointRelationMatcher<Scales>;
+  readonly atLeast: BreakpointRelationMatcher<Scales>;
+  readonly above: BreakpointRelationMatcher<Scales>;
 };
 
 /* oxlint-disable effecttsgo/extends-native-error */
@@ -61,19 +76,27 @@ export const createBreakpointDefinition = <const Scales extends BreakpointScales
     width: matchScale<Extract<keyof Scales["width"], string>>(viewport.width, entries.width),
     height: matchScale<Extract<keyof Scales["height"], string>>(viewport.height, entries.height),
   });
+  const below = createRelationMatcher<Scales>(entries, "below");
+  const atMost = createRelationMatcher<Scales>(entries, "atMost");
+  const only = createRelationMatcher<Scales>(entries, "only");
+  const atLeast = createRelationMatcher<Scales>(entries, "atLeast");
+  const above = createRelationMatcher<Scales>(entries, "above");
 
   return {
     match,
-    matches: (viewport, pair) => {
-      const current = match(viewport);
-      return current.width === pair[0] && current.height === pair[1];
-    },
+    matches: (viewport, pair) => only(viewport, pair),
+    below,
+    atMost,
+    only,
+    atLeast,
+    above,
   };
 };
 
 type ScaleEntry = readonly [name: string, threshold: number];
 type ValidatedScale = readonly [ScaleEntry, ...ScaleEntry[]];
 type ValidatedScales = Readonly<Record<BreakpointAxis, ValidatedScale>>;
+type BreakpointRelation = "below" | "atMost" | "only" | "atLeast" | "above";
 
 const breakpointAxes = ["width", "height"] as const;
 
@@ -131,12 +154,53 @@ const validateScale = (axis: BreakpointAxis, scale: unknown): ValidatedScale => 
 };
 
 const matchScale = <Name extends string>(value: number, entries: ValidatedScale): Name => {
-  let match = entries[0][0];
-  for (const [name, threshold] of entries) {
-    if (value < threshold) break;
-    match = name;
+  return entries[matchScaleIndex(value, entries)]![0] as Name;
+};
+
+const matchScaleIndex = (value: number, entries: ValidatedScale): number => {
+  let match = 0;
+  for (let index = 1; index < entries.length; index += 1) {
+    if (value < entries[index]![1]) break;
+    match = index;
   }
-  return match as Name;
+  return match;
+};
+
+const createRelationMatcher = <Scales extends BreakpointScales>(
+  entries: ValidatedScales,
+  relation: BreakpointRelation,
+): BreakpointRelationMatcher<Scales> =>
+  ((
+    viewport: BreakpointViewport,
+    axisOrPair: BreakpointAxis | BreakpointPair<Scales>,
+    name?: string,
+  ) => {
+    if (Array.isArray(axisOrPair)) {
+      return (
+        matchesRelation(viewport.width, entries.width, axisOrPair[0], relation) &&
+        matchesRelation(viewport.height, entries.height, axisOrPair[1], relation)
+      );
+    }
+
+    const axis = axisOrPair as BreakpointAxis;
+    return matchesRelation(viewport[axis], entries[axis], name, relation);
+  }) as BreakpointRelationMatcher<Scales>;
+
+const matchesRelation = (
+  value: number,
+  entries: ValidatedScale,
+  name: unknown,
+  relation: BreakpointRelation,
+): boolean => {
+  const target = entries.findIndex(([entryName]) => entryName === name);
+  if (target === -1) return false;
+
+  const current = matchScaleIndex(value, entries);
+  if (relation === "below") return current < target;
+  if (relation === "atMost") return current <= target;
+  if (relation === "only") return current === target;
+  if (relation === "atLeast") return current >= target;
+  return current > target;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

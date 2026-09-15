@@ -35,6 +35,14 @@ if (Bun.env.TYPE_TESTS) {
     breakpoints.match({ width: 80, height: 12 }).height === "extra-tall";
   void invalidHeightComparison;
   breakpoints.matches({ width: 80, height: 12 }, ["narrow", "tall"]);
+  breakpoints.atLeast({ width: 80, height: 12 }, "width", "medium");
+  breakpoints.atLeast({ width: 80, height: 12 }, ["medium", "medium"]);
+  // @ts-expect-error width-only names cannot be used for height comparisons
+  breakpoints.atLeast({ width: 80, height: 12 }, "height", "wide");
+  // @ts-expect-error pair order is width then height
+  breakpoints.atMost({ width: 80, height: 12 }, ["short", "wide"]);
+  // @ts-expect-error axis comparisons require a breakpoint name
+  breakpoints.below({ width: 80, height: 12 }, "width");
   // @ts-expect-error pair order is width then height
   breakpoints.matches({ width: 80, height: 12 }, ["short", "wide"]);
   // @ts-expect-error pairs require both axes
@@ -63,6 +71,39 @@ test("matches an exact width and height pair", () => {
   expect(breakpoints.matches({ width: 120, height: 20 }, ["wide", "tall"])).toBe(true);
   expect(breakpoints.matches({ width: 120, height: 20 }, ["medium", "tall"])).toBe(false);
   expect(breakpoints.matches({ width: 120, height: 20 }, ["wide", "medium"])).toBe(false);
+});
+
+test("compares the complete tier range on one axis", () => {
+  const at = (width: number) => ({ width, height: 12 });
+
+  expect(breakpoints.below(at(59), "width", "medium")).toBe(true);
+  expect(breakpoints.below(at(60), "width", "medium")).toBe(false);
+  expect(breakpoints.atMost(at(99), "width", "medium")).toBe(true);
+  expect(breakpoints.atMost(at(100), "width", "medium")).toBe(false);
+  expect(breakpoints.only(at(60), "width", "medium")).toBe(true);
+  expect(breakpoints.only(at(99), "width", "medium")).toBe(true);
+  expect(breakpoints.atLeast(at(59), "width", "medium")).toBe(false);
+  expect(breakpoints.atLeast(at(60), "width", "medium")).toBe(true);
+  expect(breakpoints.above(at(99), "width", "medium")).toBe(false);
+  expect(breakpoints.above(at(100), "width", "medium")).toBe(true);
+  expect(breakpoints.below(at(0), "width", "narrow")).toBe(false);
+  expect(breakpoints.atMost(at(1_000), "width", "wide")).toBe(true);
+  expect(breakpoints.above(at(1_000), "width", "wide")).toBe(false);
+});
+
+test("requires both axes to satisfy pair relations", () => {
+  const medium = { width: 80, height: 16 };
+  expect(breakpoints.below(medium, ["wide", "tall"])).toBe(true);
+  expect(breakpoints.atMost(medium, ["medium", "medium"])).toBe(true);
+  expect(breakpoints.only(medium, ["medium", "medium"])).toBe(true);
+  expect(breakpoints.atLeast(medium, ["medium", "medium"])).toBe(true);
+  expect(breakpoints.above(medium, ["narrow", "short"])).toBe(true);
+
+  expect(breakpoints.below({ width: 100, height: 16 }, ["wide", "tall"])).toBe(false);
+  expect(breakpoints.atMost({ width: 100, height: 16 }, ["medium", "medium"])).toBe(false);
+  expect(breakpoints.only({ width: 80, height: 20 }, ["medium", "medium"])).toBe(false);
+  expect(breakpoints.atLeast({ width: 80, height: 10 }, ["medium", "medium"])).toBe(false);
+  expect(breakpoints.above({ width: 80, height: 10 }, ["narrow", "short"])).toBe(false);
 });
 
 test("matches independently sized scales by threshold value rather than declaration order", () => {
