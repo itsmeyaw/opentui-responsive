@@ -112,6 +112,12 @@ const validateCondition = (condition: unknown): void => {
     );
   }
 
+  if (!["minWidth", "maxWidth", "minHeight", "maxHeight"].some((key) => key in condition)) {
+    throw new ResponsiveTuiConfigurationError(
+      "Breakpoint conditions require at least one dimension bound.",
+    );
+  }
+
   validateBounds(condition, "minWidth", "maxWidth");
   validateBounds(condition, "minHeight", "maxHeight");
 };
