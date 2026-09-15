@@ -30,6 +30,13 @@ if (Bun.env.TYPE_TESTS) {
     // @ts-expect-error unconfigured height names cannot be compared
     breakpoints.match({ width: 80, height: 12 }).height === "extra-tall";
   void invalidHeightComparison;
+  breakpoints.matches({ width: 80, height: 12 }, ["narrow", "tall"]);
+  // @ts-expect-error pair order is width then height
+  breakpoints.matches({ width: 80, height: 12 }, ["short", "wide"]);
+  // @ts-expect-error pairs require both axes
+  breakpoints.matches({ width: 80, height: 12 }, ["narrow"]);
+  // @ts-expect-error pairs contain exactly two axes
+  breakpoints.matches({ width: 80, height: 12 }, ["narrow", "tall", "extra"]);
 }
 
 test("matches the highest inclusive tier independently on each axis", () => {
@@ -46,6 +53,12 @@ test("matches the highest inclusive tier independently on each axis", () => {
     width: "medium",
     height: "tall",
   });
+});
+
+test("matches an exact width and height pair", () => {
+  expect(breakpoints.matches({ width: 120, height: 20 }, ["wide", "tall"])).toBe(true);
+  expect(breakpoints.matches({ width: 120, height: 20 }, ["medium", "tall"])).toBe(false);
+  expect(breakpoints.matches({ width: 120, height: 20 }, ["wide", "medium"])).toBe(false);
 });
 
 test("matches independently sized scales by threshold value rather than declaration order", () => {

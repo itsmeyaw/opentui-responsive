@@ -16,8 +16,14 @@ export type BreakpointMatch<Scales extends BreakpointScales = BreakpointScales> 
   readonly [Axis in BreakpointAxis]: Extract<keyof Scales[Axis], string>;
 };
 
+export type BreakpointPair<Scales extends BreakpointScales = BreakpointScales> = readonly [
+  width: BreakpointMatch<Scales>["width"],
+  height: BreakpointMatch<Scales>["height"],
+];
+
 export type BreakpointDefinition<Scales extends BreakpointScales = BreakpointScales> = {
   readonly match: (viewport: BreakpointViewport) => BreakpointMatch<Scales>;
+  readonly matches: (viewport: BreakpointViewport, pair: BreakpointPair<Scales>) => boolean;
 };
 
 export type BreakpointOf<Input, Axis extends BreakpointAxis> =
@@ -41,12 +47,17 @@ export const defineBreakpoints = <const Scales extends BreakpointScales>(
   scales: Scales & Record<Exclude<keyof Scales, BreakpointAxis>, never>,
 ): BreakpointDefinition<Scales> => {
   const entries = validateScales(scales);
+  const match = (viewport: BreakpointViewport): BreakpointMatch<Scales> => ({
+    width: matchScale<Extract<keyof Scales["width"], string>>(viewport.width, entries.width),
+    height: matchScale<Extract<keyof Scales["height"], string>>(viewport.height, entries.height),
+  });
 
   return {
-    match: (viewport) => ({
-      width: matchScale<Extract<keyof Scales["width"], string>>(viewport.width, entries.width),
-      height: matchScale<Extract<keyof Scales["height"], string>>(viewport.height, entries.height),
-    }),
+    match,
+    matches: (viewport, pair) => {
+      const current = match(viewport);
+      return current.width === pair[0] && current.height === pair[1];
+    },
   };
 };
 

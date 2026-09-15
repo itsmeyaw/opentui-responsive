@@ -51,6 +51,14 @@ function Content() {
 
 `useResponsiveTui()` returns a Solid accessor. Each axis has its own inferred name union and updates when that terminal dimension crosses a configured threshold. In this example, width is `"narrow" | "medium" | "wide"`, height is `"short" | "medium" | "tall"`, and a `120 x 10` terminal returns `{ width: "wide", height: "short" }`.
 
+Pass an exact `[width, height]` pair to check both axes reactively:
+
+```ts
+breakpoint(["narrow", "tall"]); // boolean
+```
+
+The pair must contain exactly one configured name for each axis, in width-then-height order.
+
 TypeScript rejects names that are not configured for that axis:
 
 ```ts
@@ -88,6 +96,9 @@ The core definition has no framework dependencies and can match explicit dimensi
 ```ts
 const current = breakpoints.match({ width: 120, height: 10 });
 // { width: "wide", height: "short" }
+
+const exact = breakpoints.matches({ width: 120, height: 10 }, ["wide", "short"]);
+// true
 ```
 
 Extract an axis's inferred name union with `BreakpointOf`:

@@ -1,7 +1,17 @@
 import { useTerminalDimensions } from "@opentui/solid";
-import { createContext, createMemo, useContext, type Accessor, type ParentProps } from "solid-js";
+import { createContext, createMemo, useContext, type ParentProps } from "solid-js";
 
-import type { BreakpointDefinition, BreakpointMatch, BreakpointScales } from "../core/index.js";
+import type {
+  BreakpointDefinition,
+  BreakpointMatch,
+  BreakpointPair,
+  BreakpointScales,
+} from "../core/index.js";
+
+export type ResponsiveBreakpointAccessor<Scales extends BreakpointScales = BreakpointScales> = {
+  (): BreakpointMatch<Scales>;
+  (pair: BreakpointPair<Scales>): boolean;
+};
 
 /* oxlint-disable effecttsgo/extends-native-error */
 export class ResponsiveTuiProviderError extends Error {
@@ -16,12 +26,15 @@ export class ResponsiveTuiProviderError extends Error {
 export const createResponsiveTui = <const Scales extends BreakpointScales>(
   breakpoints: BreakpointDefinition<Scales>,
 ) => {
-  type Match = BreakpointMatch<Scales>;
-  const ResponsiveTuiContext = createContext<Accessor<Match>>();
+  const ResponsiveTuiContext = createContext<ResponsiveBreakpointAccessor<Scales>>();
 
   const ResponsiveTUI = (props: ParentProps) => {
     const dimensions = useTerminalDimensions();
-    const breakpoint = createMemo(() => breakpoints.match(dimensions()));
+    const current = createMemo(() => breakpoints.match(dimensions()));
+    const breakpoint = ((pair?: BreakpointPair<Scales>) =>
+      pair
+        ? breakpoints.matches(dimensions(), pair)
+        : current()) as ResponsiveBreakpointAccessor<Scales>;
 
     return ResponsiveTuiContext.Provider({
       get children() {
@@ -31,7 +44,7 @@ export const createResponsiveTui = <const Scales extends BreakpointScales>(
     });
   };
 
-  const useResponsiveTui = (): Accessor<Match> => {
+  const useResponsiveTui = (): ResponsiveBreakpointAccessor<Scales> => {
     const breakpoint = useContext(ResponsiveTuiContext);
     if (!breakpoint) {
       throw new ResponsiveTuiProviderError();

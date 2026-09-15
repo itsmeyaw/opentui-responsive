@@ -21,6 +21,13 @@ if (Bun.env.TYPE_TESTS) {
   const invalidHeightComparison = breakpoint().height === "extra-tall";
   void widthNameComparedWithHeight;
   void invalidHeightComparison;
+  breakpoint(["compact", "tall"]);
+  // @ts-expect-error pair order is width then height
+  breakpoint(["short", "wide"]);
+  // @ts-expect-error pairs require both axes
+  breakpoint(["compact"]);
+  // @ts-expect-error pairs contain exactly two axes
+  breakpoint(["compact", "tall", "extra"]);
 }
 
 test("provides the initial breakpoint and updates it after a resize", async () => {
@@ -44,6 +51,32 @@ test("provides the initial breakpoint and updates it after a resize", async () =
     setup.resize(40, 4);
     await setup.renderOnce();
     expect(setup.captureCharFrame()).toContain("wide/short");
+  } finally {
+    setup.renderer.destroy();
+  }
+});
+
+test("reactively matches an exact width and height pair", async () => {
+  const App = () => {
+    const breakpoint = responsiveTui.useResponsiveTui();
+    return <text>{`${breakpoint(["compact", "short"])}/${breakpoint(["wide", "tall"])}`}</text>;
+  };
+  const setup = await testRender(
+    () => (
+      <responsiveTui.ResponsiveTUI>
+        <App />
+      </responsiveTui.ResponsiveTUI>
+    ),
+    { height: 4, width: 20 },
+  );
+
+  try {
+    await setup.renderOnce();
+    expect(setup.captureCharFrame()).toContain("true/false");
+
+    setup.resize(40, 10);
+    await setup.renderOnce();
+    expect(setup.captureCharFrame()).toContain("false/true");
   } finally {
     setup.renderer.destroy();
   }
