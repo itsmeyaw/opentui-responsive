@@ -74,6 +74,11 @@ const validateTiers = (tiers: unknown): [string, BreakpointThreshold][] => {
     if (name.length === 0) {
       throw new ResponsiveTuiConfigurationError("Breakpoint names must be non-empty strings.");
     }
+    if (/^(0|[1-9]\d*)$/.test(name)) {
+      throw new ResponsiveTuiConfigurationError(
+        "Breakpoint names cannot be non-negative integers.",
+      );
+    }
     if (!isRecord(threshold) || Array.isArray(threshold)) {
       throw new ResponsiveTuiConfigurationError("Breakpoint thresholds must be objects.");
     }

@@ -31,6 +31,7 @@ test("rejects invalid breakpoint configurations with a typed error", () => {
   const invalid = [
     {},
     { "": { width: 0, height: 0 } },
+    { "0": { width: 0, height: 0 } },
     { sm: { width: 1, height: 0 } },
     { sm: { width: 0, height: 1 } },
     { sm: { width: 0 } },
