@@ -21,7 +21,20 @@ for (const target of exportTargets) {
   }
 }
 
-const core = await Bun.file(`${import.meta.dir}/dist/core/index.js`).text();
-if (core.includes("solid-js") || core.includes("@opentui/solid")) {
+const coreBundle = await Bun.build({
+  entrypoints: [`${import.meta.dir}/core-consumer.ts`],
+  files: {
+    [`${import.meta.dir}/core-consumer.ts`]: `
+      import { defineBreakpoints } from "@itsmeyaw/opentui-responsive/core";
+      console.log(defineBreakpoints([{ name: "standard" }]).match({ width: 80, height: 24 }));
+    `,
+  },
+  minify: true,
+  target: "node",
+});
+if (!coreBundle.success) throw new PackageCheckError("The core export could not be bundled.");
+
+const bundledCore = await coreBundle.outputs[0]?.text();
+if (!bundledCore || bundledCore.includes("solid-js") || bundledCore.includes("@opentui/solid")) {
   throw new PackageCheckError("The core export must not include Solid or OpenTUI.");
 }

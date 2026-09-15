@@ -59,6 +59,7 @@ test("rejects invalid breakpoint configurations with a typed error", () => {
     [{ name: "negative", when: { maxHeight: -1 } }, { name: "default" }],
     [{ name: "nan", when: { minHeight: Number.NaN } }, { name: "default" }],
     [{ name: "infinite", when: { maxWidth: Number.POSITIVE_INFINITY } }, { name: "default" }],
+    [{ name: "unknown", when: { maxWidth: 10, maxWidht: 10 } }, { name: "default" }],
     [{ name: "reversed", when: { minWidth: 10, maxWidth: 9 } }, { name: "default" }],
   ];
 

@@ -28,11 +28,11 @@ export type BreakpointDefinition<Rules extends BreakpointRules = BreakpointRules
   readonly match: (viewport: BreakpointViewport) => BreakpointOf<Rules>;
 };
 
-export type BreakpointOf<Value> =
-  Value extends BreakpointDefinition<infer Rules>
+export type BreakpointOf<Input> =
+  Input extends BreakpointDefinition<infer Rules>
     ? Rules[number]["name"]
-    : Value extends BreakpointRules
-      ? Value[number]["name"]
+    : Input extends BreakpointRules
+      ? Input[number]["name"]
       : never;
 
 /* oxlint-disable effecttsgo/extends-native-error */
@@ -116,6 +116,12 @@ const validateCondition = (condition: unknown): void => {
     throw new ResponsiveTuiConfigurationError(
       "Breakpoint conditions require at least one dimension bound.",
     );
+  }
+
+  const allowedBounds = new Set(["minWidth", "maxWidth", "minHeight", "maxHeight"]);
+  const unknown = Object.keys(condition).find((key) => !allowedBounds.has(key));
+  if (unknown) {
+    throw new ResponsiveTuiConfigurationError(`Unknown breakpoint condition: ${unknown}.`);
   }
 
   validateBounds(condition, "minWidth", "maxWidth");
