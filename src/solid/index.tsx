@@ -1,13 +1,17 @@
 import { useTerminalDimensions } from "@opentui/solid";
-import { Schema } from "effect";
 import { createContext, createMemo, useContext, type Accessor, type ParentProps } from "solid-js";
 
-import type { BreakpointDefinition, BreakpointOf, BreakpointRules } from "../core/index.ts";
+import type { BreakpointDefinition, BreakpointOf, BreakpointRules } from "../core/index.js";
 
-export class ResponsiveTuiProviderError extends Schema.TaggedError<ResponsiveTuiProviderError>()(
-  "ResponsiveTuiProviderError",
-  { message: Schema.String },
-) {}
+/* oxlint-disable effecttsgo/extends-native-error */
+export class ResponsiveTuiProviderError extends Error {
+  readonly _tag = "ResponsiveTuiProviderError";
+
+  constructor() {
+    super("useResponsiveTui must be used within a ResponsiveTUI");
+    this.name = this._tag;
+  }
+}
 
 export const createResponsiveTui = <const Rules extends BreakpointRules>(
   breakpoints: BreakpointDefinition<Rules>,
@@ -29,9 +33,7 @@ export const createResponsiveTui = <const Rules extends BreakpointRules>(
   const useResponsiveTui = (): Accessor<BreakpointOf<Rules>> => {
     const breakpoint = useContext(ResponsiveTuiContext);
     if (!breakpoint) {
-      throw new ResponsiveTuiProviderError({
-        message: "useResponsiveTui must be used within a ResponsiveTUI",
-      });
+      throw new ResponsiveTuiProviderError();
     }
     return breakpoint;
   };

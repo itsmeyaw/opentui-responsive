@@ -1,0 +1,52 @@
+{
+  "name": "@itsmeyaw/opentui-responsive",
+  "version": "0.1.0",
+  "description": "Typed responsive breakpoints for OpenTUI.",
+  "license": "MIT",
+  "repository": "github:itsmeyaw/spotipai",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "default": "./dist/core/index.js"
+    },
+    "./solid": {
+      "types": "./dist/solid/index.d.ts",
+      "import": "./dist/solid/index.js",
+      "default": "./dist/solid/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun build.ts && tsc -p tsconfig.build.json",
+    "check:package": "bun package-check.ts && publint --strict && attw --pack . --profile esm-only",
+    "prepack": "bun run build"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@opentui/solid": "0.5.11",
+    "publint": "0.3.24",
+    "solid-js": "1.9.12"
+  },
+  "peerDependencies": {
+    "@opentui/solid": "^0.5.11",
+    "solid-js": "1.9.12"
+  },
+  "peerDependenciesMeta": {
+    "@opentui/solid": {
+      "optional": true
+    },
+    "solid-js": {
+      "optional": true
+    }
+  }
+}

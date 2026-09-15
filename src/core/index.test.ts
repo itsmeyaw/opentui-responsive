@@ -12,7 +12,7 @@ type Name = BreakpointOf<typeof breakpoints>;
 const name: Name = "compact";
 void name;
 
-if (false) {
+if (Bun.env.TYPE_TESTS) {
   // @ts-expect-error a non-final rule needs a condition
   defineBreakpoints([{ name: "compact" }, { name: "default" }] as const);
   // @ts-expect-error the final fallback cannot have a condition
