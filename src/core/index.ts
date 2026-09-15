@@ -1,15 +1,17 @@
-export type BreakpointCondition =
-  | {
-      readonly minWidth?: number;
-      readonly maxWidth?: number;
-      readonly minHeight?: number;
-      readonly maxHeight?: number;
-    }
+export type BreakpointCondition = {
+  readonly minWidth?: number;
+  readonly maxWidth?: number;
+  readonly minHeight?: number;
+  readonly maxHeight?: number;
+};
+
+export type BreakpointConditions =
+  | BreakpointCondition
   | readonly [BreakpointCondition, ...BreakpointCondition[]];
 
 export type BreakpointRule<Name extends string = string> = {
   readonly name: Name;
-  readonly when: BreakpointCondition;
+  readonly when: BreakpointConditions;
 };
 
 export type BreakpointFallbackRule<Name extends string = string> = {
@@ -101,15 +103,17 @@ const validateCondition = (condition: unknown): void => {
       throw new ResponsiveTuiConfigurationError("Breakpoint condition arrays cannot be empty.");
     }
     for (const item of condition) {
-      validateCondition(item);
+      validateConditionObject(item);
     }
     return;
   }
 
+  validateConditionObject(condition);
+};
+
+const validateConditionObject = (condition: unknown): void => {
   if (!isRecord(condition)) {
-    throw new ResponsiveTuiConfigurationError(
-      "Breakpoint conditions must be objects or non-empty arrays.",
-    );
+    throw new ResponsiveTuiConfigurationError("Breakpoint conditions must be objects.");
   }
 
   if (!["minWidth", "maxWidth", "minHeight", "maxHeight"].some((key) => key in condition)) {
@@ -148,23 +152,24 @@ const validateBounds = (
 };
 
 const matchesCondition = (
-  condition: BreakpointCondition,
+  condition: BreakpointConditions,
   viewport: BreakpointViewport,
 ): boolean => {
   if (Array.isArray(condition)) {
-    return (condition as readonly BreakpointCondition[]).some((item) =>
-      matchesCondition(item, viewport),
-    );
+    return condition.some((item) => matchesConditionObject(item, viewport));
   }
 
-  const bounds = condition as Exclude<BreakpointCondition, readonly BreakpointCondition[]>;
-  return (
-    (bounds.minWidth === undefined || viewport.width >= bounds.minWidth) &&
-    (bounds.maxWidth === undefined || viewport.width <= bounds.maxWidth) &&
-    (bounds.minHeight === undefined || viewport.height >= bounds.minHeight) &&
-    (bounds.maxHeight === undefined || viewport.height <= bounds.maxHeight)
-  );
+  return matchesConditionObject(condition as BreakpointCondition, viewport);
 };
+
+const matchesConditionObject = (
+  bounds: BreakpointCondition,
+  viewport: BreakpointViewport,
+): boolean =>
+  (bounds.minWidth === undefined || viewport.width >= bounds.minWidth) &&
+  (bounds.maxWidth === undefined || viewport.width <= bounds.maxWidth) &&
+  (bounds.minHeight === undefined || viewport.height >= bounds.minHeight) &&
+  (bounds.maxHeight === undefined || viewport.height <= bounds.maxHeight);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;

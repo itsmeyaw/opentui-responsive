@@ -22,6 +22,11 @@ if (Bun.env.TYPE_TESTS) {
     { name: "compact", when: {} },
     { name: "wide", when: {} },
   ] as const);
+  // @ts-expect-error condition arrays cannot be nested
+  defineBreakpoints([
+    { name: "compact", when: [[{ maxWidth: 40 }]] },
+    { name: "default" },
+  ] as const);
   // @ts-expect-error breakpoint names stay literal
   const invalidName: Name = "wide";
   void invalidName;
@@ -55,6 +60,7 @@ test("rejects invalid breakpoint configurations with a typed error", () => {
     [{ name: "only", when: {} }],
     [{ name: "empty", when: {} }, { name: "default" }],
     [{ name: "empty-or", when: [] }, { name: "default" }],
+    [{ name: "nested-or", when: [[{ maxWidth: 10 }]] }, { name: "default" }],
     [{ name: "fraction", when: { minWidth: 1.5 } }, { name: "default" }],
     [{ name: "negative", when: { maxHeight: -1 } }, { name: "default" }],
     [{ name: "nan", when: { minHeight: Number.NaN } }, { name: "default" }],
