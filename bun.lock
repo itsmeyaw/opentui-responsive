@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@itsmeyaw/opentui-responsive",
+      "name": "opentui-responsive",
       "devDependencies": {
         "@arethetypeswrong/cli": "0.18.5",
         "@opentui/solid": "0.5.11",

@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -19,10 +20,10 @@ jobs:
         with:
           node-version: 26.4.0
           registry-url: https://registry.npmjs.org
+      - name: Upgrade npm for trusted publishing
+        run: npm install --global npm@latest
       - run: bun install --frozen-lockfile
       - run: bun run check
       - name: Verify release version
         run: test "${GITHUB_REF_NAME#v}" = "$(bun -p "require('./package.json').version")"
-      - run: bun publish --access public
-        env:
-          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public

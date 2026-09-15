@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
-import { defineBreakpoints } from "@itsmeyaw/opentui-responsive/core";
-import { createResponsiveTui } from "@itsmeyaw/opentui-responsive/solid";
+import { defineBreakpoints } from "opentui-responsive/core";
+import { createResponsiveTui } from "opentui-responsive/solid";
 
 const responsive = createResponsiveTui(
   defineBreakpoints({

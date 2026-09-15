@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { defineBreakpoints } from "@itsmeyaw/opentui-responsive/core";
+import { defineBreakpoints } from "opentui-responsive/core";
 
 const breakpoints = defineBreakpoints({
   width: { narrow: 0, wide: 80 },

@@ -1,4 +1,4 @@
-# @itsmeyaw/opentui-responsive
+# opentui-responsive
 
 Typed responsive breakpoints for OpenTUI, with a framework-neutral core and a Solid adapter.
 
@@ -7,20 +7,20 @@ Typed responsive breakpoints for OpenTUI, with a framework-neutral core and a So
 For OpenTUI Solid applications:
 
 ```sh
-bun add @itsmeyaw/opentui-responsive @opentui/solid solid-js
+bun add opentui-responsive @opentui/solid solid-js
 # or
-npm install @itsmeyaw/opentui-responsive @opentui/solid solid-js
+npm install opentui-responsive @opentui/solid solid-js
 ```
 
-Core-only consumers only need `@itsmeyaw/opentui-responsive`.
+Core-only consumers only need `opentui-responsive`.
 
 ## Solid
 
 Define mobile-first tiers once, then create a provider and hook bound to that definition:
 
 ```tsx
-import { defineBreakpoints } from "@itsmeyaw/opentui-responsive/core";
-import { createResponsiveTui } from "@itsmeyaw/opentui-responsive/solid";
+import { defineBreakpoints } from "opentui-responsive/core";
+import { createResponsiveTui } from "opentui-responsive/solid";
 
 const breakpoints = defineBreakpoints({
   width: {
@@ -112,7 +112,7 @@ type HeightBreakpoint = BreakpointOf<typeof breakpoints, "height">;
 
 ## Packaging
 
-The package is ESM-only. `@itsmeyaw/opentui-responsive/core` and `@itsmeyaw/opentui-responsive/solid` are separate package entrypoints, and the package is marked side-effect free so modern bundlers can remove unused exports. Importing `/core` does not load Solid or OpenTUI.
+The package is ESM-only. `opentui-responsive/core` and `opentui-responsive/solid` are separate package entrypoints, and the package is marked side-effect free so modern bundlers can remove unused exports. Importing `/core` does not load Solid or OpenTUI.
 
 ## Runtime support
 
@@ -131,3 +131,7 @@ node --experimental-ffi app.mjs
 ```
 
 Use Bun 1.4.0 or later on native Windows arm64.
+
+## Publishing
+
+Publishing a GitHub release whose tag matches the package version triggers `.github/workflows/publish.yml`. Configure npm trusted publishing for the `itsmeyaw/opentui-responsive` repository, the `publish.yml` workflow, and direct `npm publish` access; no `NPM_TOKEN` secret is used.

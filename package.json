@@ -1,9 +1,12 @@
 {
-  "name": "@itsmeyaw/opentui-responsive",
+  "name": "opentui-responsive",
   "version": "0.1.0",
   "description": "Typed responsive breakpoints for OpenTUI.",
   "license": "MIT",
-  "repository": "github:itsmeyaw/opentui-responsive",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itsmeyaw/opentui-responsive.git"
+  },
   "files": [
     "dist",
     "README.md",

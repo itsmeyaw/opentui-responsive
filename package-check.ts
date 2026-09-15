@@ -25,7 +25,7 @@ const coreBundle = await Bun.build({
   entrypoints: [`${import.meta.dir}/core-consumer.ts`],
   files: {
     [`${import.meta.dir}/core-consumer.ts`]: `
-      import { defineBreakpoints } from "@itsmeyaw/opentui-responsive/core";
+      import { defineBreakpoints } from "opentui-responsive/core";
       console.log(defineBreakpoints({ width: { standard: 0 }, height: { standard: 0 } }).match({ width: 80, height: 24 }));
     `,
   },
