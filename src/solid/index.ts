@@ -1,12 +1,14 @@
 import { useTerminalDimensions } from "@opentui/solid";
 import { createContext, createMemo, useContext, type ParentProps } from "solid-js";
 
-import type {
-  BreakpointDefinition,
-  BreakpointMatch,
-  BreakpointPair,
-  BreakpointScales,
+import {
+  createBreakpointDefinition,
+  type BreakpointMatch,
+  type BreakpointPair,
+  type BreakpointScales,
 } from "../core/index.js";
+
+export { ResponsiveTuiConfigurationError } from "../core/index.js";
 
 /** A reactive Solid accessor that reads or tests the current breakpoint pair. */
 export type ResponsiveBreakpointAccessor<Scales extends BreakpointScales = BreakpointScales> = {
@@ -27,8 +29,9 @@ export class ResponsiveTuiProviderError extends Error {
 
 /** Creates a Solid provider and hook bound to one breakpoint definition. */
 export const createResponsiveTui = <const Scales extends BreakpointScales>(
-  breakpoints: BreakpointDefinition<Scales>,
+  scales: Scales & Record<Exclude<keyof Scales, "width" | "height">, never>,
 ) => {
+  const breakpoints = createBreakpointDefinition(scales);
   const ResponsiveTuiContext = createContext<ResponsiveBreakpointAccessor<Scales>>();
 
   const ResponsiveTUI = (props: ParentProps) => {

@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 
-import { ResponsiveTuiConfigurationError, defineBreakpoints, type BreakpointOf } from "./index.ts";
+import { createBreakpointDefinition, ResponsiveTuiConfigurationError } from "./index.ts";
 
-const breakpoints = defineBreakpoints({
+const breakpoints = createBreakpointDefinition({
   width: { narrow: 0, medium: 60, wide: 100 },
   height: { short: 0, medium: 12, tall: 20 },
 });
 
-type WidthName = BreakpointOf<typeof breakpoints, "width">;
-type HeightName = BreakpointOf<typeof breakpoints, "height">;
+type WidthName = ReturnType<typeof breakpoints.match>["width"];
+type HeightName = ReturnType<typeof breakpoints.match>["height"];
 const widthName: WidthName = "wide";
 const heightName: HeightName = "tall";
 void widthName;
@@ -16,8 +16,8 @@ void heightName;
 
 if (Bun.env.TYPE_TESTS) {
   // @ts-expect-error both axis scales are required
-  defineBreakpoints({ width: { narrow: 0 } });
-  defineBreakpoints({
+  createBreakpointDefinition({ width: { narrow: 0 } });
+  createBreakpointDefinition({
     width: { narrow: 0 },
     height: { short: 0 },
     // @ts-expect-error unknown axes are rejected
@@ -62,7 +62,7 @@ test("matches an exact width and height pair", () => {
 });
 
 test("matches independently sized scales by threshold value rather than declaration order", () => {
-  const unordered = defineBreakpoints({
+  const unordered = createBreakpointDefinition({
     width: { wide: 100, narrow: 0, medium: 60 },
     height: { tall: 20, short: 0 },
   });
@@ -95,8 +95,10 @@ test("rejects invalid breakpoint configurations with a typed error", () => {
   ];
 
   for (const tiers of invalid) {
-    expect(() => defineBreakpoints(tiers as never)).toThrow(ResponsiveTuiConfigurationError);
-    expect(() => defineBreakpoints(tiers as never)).toThrow(
+    expect(() => createBreakpointDefinition(tiers as never)).toThrow(
+      ResponsiveTuiConfigurationError,
+    );
+    expect(() => createBreakpointDefinition(tiers as never)).toThrow(
       expect.objectContaining({ _tag: "ResponsiveTuiConfigurationError" }),
     );
   }

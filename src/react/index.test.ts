@@ -10,15 +10,16 @@ import {
   type PropsWithChildren,
 } from "react";
 
-import { defineBreakpoints } from "../core/index.ts";
-import { createResponsiveTui, ResponsiveTuiProviderError } from "./index.ts";
+import {
+  createResponsiveTui,
+  ResponsiveTuiConfigurationError,
+  ResponsiveTuiProviderError,
+} from "./index.ts";
 
-const responsiveTui = createResponsiveTui(
-  defineBreakpoints({
-    width: { compact: 0, wide: 40 },
-    height: { short: 0, tall: 10 },
-  }),
-);
+const responsiveTui = createResponsiveTui({
+  width: { compact: 0, wide: 40 },
+  height: { short: 0, tall: 10 },
+});
 
 if (Bun.env.TYPE_TESTS) {
   const breakpoint = responsiveTui.useResponsiveTui();
@@ -29,6 +30,8 @@ if (Bun.env.TYPE_TESTS) {
   void widthNameComparedWithHeight;
   void invalidHeightComparison;
   breakpoint(["compact", "tall"]);
+  // @ts-expect-error both axis scales are required
+  createResponsiveTui({ width: { compact: 0 } });
   // @ts-expect-error pair order is width then height
   breakpoint(["short", "wide"]);
   // @ts-expect-error pairs require both axes
@@ -152,13 +155,17 @@ test("throws a typed error when used outside its provider", async () => {
   }
 });
 
-test("keeps contexts created by different factories isolated", async () => {
-  const otherResponsiveTui = createResponsiveTui(
-    defineBreakpoints({
-      width: { small: 0, large: 40 },
-      height: { low: 0, high: 10 },
-    }),
+test("rejects invalid breakpoint scales when the factory is created", () => {
+  expect(() => createResponsiveTui({ width: { compact: 0 }, height: { short: 1 } })).toThrow(
+    ResponsiveTuiConfigurationError,
   );
+});
+
+test("keeps contexts created by different factories isolated", async () => {
+  const otherResponsiveTui = createResponsiveTui({
+    width: { small: 0, large: 40 },
+    height: { low: 0, high: 10 },
+  });
   const App = () => {
     const breakpoint = responsiveTui.useResponsiveTui();
     const otherBreakpoint = otherResponsiveTui.useResponsiveTui();
