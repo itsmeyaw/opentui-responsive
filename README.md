@@ -14,23 +14,17 @@ Core-only consumers only need `@itsmeyaw/opentui-responsive`.
 
 ## Solid
 
-Define ordered breakpoints once, then create a provider and hook bound to that definition:
+Define mobile-first tiers once, then create a provider and hook bound to that definition:
 
 ```tsx
 import { defineBreakpoints } from "@itsmeyaw/opentui-responsive/core";
 import { createResponsiveTui } from "@itsmeyaw/opentui-responsive/solid";
 
-const breakpoints = defineBreakpoints([
-  {
-    name: "compact",
-    when: [{ maxWidth: 59 }, { maxHeight: 12 }],
-  },
-  {
-    name: "wide",
-    when: { minWidth: 100, minHeight: 16 },
-  },
-  { name: "standard" },
-]);
+const breakpoints = defineBreakpoints({
+  sm: { width: 0, height: 0 },
+  md: { width: 60, height: 12 },
+  lg: { width: 100, height: 20 },
+});
 
 const { ResponsiveTUI, useResponsiveTui } = createResponsiveTui(breakpoints);
 
@@ -44,29 +38,30 @@ function App() {
 
 function Content() {
   const breakpoint = useResponsiveTui();
-  return <text>{breakpoint()}</text>;
+  return <text>{`${breakpoint().width}/${breakpoint().height}`}</text>;
 }
 ```
 
-`useResponsiveTui()` returns a Solid accessor. In this example, `breakpoint()` is inferred as `"compact" | "wide" | "standard"` and updates when the terminal crosses a configured breakpoint.
+`useResponsiveTui()` returns a Solid accessor. Each axis is inferred as `"sm" | "md" | "lg"` and updates when that terminal dimension crosses a configured threshold. For example, a `120 x 10` terminal returns `{ width: "lg", height: "sm" }`.
 
-## Rules
+## Tiers
 
-Rules are checked from top to bottom, and the first match wins. The final rule has no `when` condition and is the required fallback.
+Every tier defines inclusive minimum `width` and `height` thresholds in terminal cells. Width and height are matched independently to the highest satisfied tier, so wide and short terminals retain both classifications.
 
-Fields in one condition use AND semantics:
-
-```ts
-{ minWidth: 100, minHeight: 16 }
-```
-
-Conditions in an array use OR semantics:
+The first tier must start both axes at zero:
 
 ```ts
-[{ maxWidth: 59 }, { maxHeight: 12 }];
+sm: { width: 0, height: 0 }
 ```
 
-`minWidth`, `maxWidth`, `minHeight`, and `maxHeight` are inclusive terminal-cell bounds. Invalid definitions throw `ResponsiveTuiConfigurationError` during configuration. Calling a generated hook outside its provider throws `ResponsiveTuiProviderError`.
+Both thresholds must strictly increase in declaration order:
+
+```ts
+md: { width: 60, height: 12 },
+lg: { width: 100, height: 20 },
+```
+
+Thresholds must be finite non-negative integers. Invalid definitions throw `ResponsiveTuiConfigurationError` during configuration. Calling a generated hook outside its provider throws `ResponsiveTuiProviderError`.
 
 Use breakpoints for discrete layout modes. Keep continuous measurements such as progress-bar width and available list height on OpenTUI's `useTerminalDimensions()`.
 
@@ -75,7 +70,8 @@ Use breakpoints for discrete layout modes. Keep continuous measurements such as 
 The core definition has no framework dependencies and can match explicit dimensions directly:
 
 ```ts
-const current = breakpoints.match({ width: 80, height: 24 });
+const current = breakpoints.match({ width: 120, height: 10 });
+// { width: "lg", height: "sm" }
 ```
 
 Extract its inferred name union with `BreakpointOf`:

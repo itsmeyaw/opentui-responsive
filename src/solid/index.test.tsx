@@ -7,11 +7,17 @@ import { defineBreakpoints } from "../core/index.ts";
 import { createResponsiveTui, ResponsiveTuiProviderError } from "./index.tsx";
 
 const responsiveTui = createResponsiveTui(
-  defineBreakpoints([{ name: "compact", when: { maxWidth: 39 } }, { name: "wide" }]),
+  defineBreakpoints({
+    compact: { width: 0, height: 0 },
+    wide: { width: 40, height: 10 },
+  }),
 );
 
 test("provides the initial breakpoint and updates it after a resize", async () => {
-  const App = () => <text>{responsiveTui.useResponsiveTui()()}</text>;
+  const App = () => {
+    const breakpoint = responsiveTui.useResponsiveTui();
+    return <text>{`${breakpoint().width}/${breakpoint().height}`}</text>;
+  };
   const setup = await testRender(
     () => (
       <responsiveTui.ResponsiveTUI>
@@ -23,11 +29,11 @@ test("provides the initial breakpoint and updates it after a resize", async () =
 
   try {
     await setup.renderOnce();
-    expect(setup.captureCharFrame()).toContain("compact");
+    expect(setup.captureCharFrame()).toContain("compact/compact");
 
     setup.resize(40, 4);
     await setup.renderOnce();
-    expect(setup.captureCharFrame()).toContain("wide");
+    expect(setup.captureCharFrame()).toContain("wide/compact");
   } finally {
     setup.renderer.destroy();
   }
@@ -41,7 +47,7 @@ test("keeps children mounted when the breakpoint changes", async () => {
     const [count, setCount] = createSignal(0);
     mounts += 1;
     increment = () => setCount((value) => value + 1);
-    return <text>{`${breakpoint()}:${count()}`}</text>;
+    return <text>{`${breakpoint().width}/${breakpoint().height}:${count()}`}</text>;
   };
   const setup = await testRender(
     () => (
@@ -59,7 +65,7 @@ test("keeps children mounted when the breakpoint changes", async () => {
     setup.resize(40, 4);
     await setup.renderOnce();
 
-    expect(setup.captureCharFrame()).toContain("wide:1");
+    expect(setup.captureCharFrame()).toContain("wide/compact:1");
     expect(mounts).toBe(1);
   } finally {
     setup.renderer.destroy();
@@ -72,11 +78,16 @@ test("throws a typed error when used outside its provider", () => {
 
 test("keeps contexts created by different factories isolated", async () => {
   const otherResponsiveTui = createResponsiveTui(
-    defineBreakpoints([{ name: "small", when: { maxWidth: 39 } }, { name: "large" }]),
+    defineBreakpoints({
+      small: { width: 0, height: 0 },
+      large: { width: 40, height: 10 },
+    }),
   );
-  const App = () => (
-    <text>{`${responsiveTui.useResponsiveTui()()}/${otherResponsiveTui.useResponsiveTui()()}`}</text>
-  );
+  const App = () => {
+    const breakpoint = responsiveTui.useResponsiveTui();
+    const otherBreakpoint = otherResponsiveTui.useResponsiveTui();
+    return <text>{`${breakpoint().width}/${otherBreakpoint().width}`}</text>;
+  };
   const setup = await testRender(
     () => (
       <responsiveTui.ResponsiveTUI>

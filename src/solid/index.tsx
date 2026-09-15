@@ -1,7 +1,12 @@
 import { useTerminalDimensions } from "@opentui/solid";
 import { createContext, createMemo, useContext, type Accessor, type ParentProps } from "solid-js";
 
-import type { BreakpointDefinition, BreakpointOf, BreakpointRules } from "../core/index.js";
+import type {
+  BreakpointDefinition,
+  BreakpointMatch,
+  BreakpointOf,
+  BreakpointTiers,
+} from "../core/index.js";
 
 /* oxlint-disable effecttsgo/extends-native-error */
 export class ResponsiveTuiProviderError extends Error {
@@ -13,10 +18,11 @@ export class ResponsiveTuiProviderError extends Error {
   }
 }
 
-export const createResponsiveTui = <const Rules extends BreakpointRules>(
-  breakpoints: BreakpointDefinition<Rules>,
+export const createResponsiveTui = <const Tiers extends BreakpointTiers>(
+  breakpoints: BreakpointDefinition<Tiers>,
 ) => {
-  const ResponsiveTuiContext = createContext<Accessor<BreakpointOf<Rules>>>();
+  type Match = BreakpointMatch<BreakpointOf<Tiers>>;
+  const ResponsiveTuiContext = createContext<Accessor<Match>>();
 
   const ResponsiveTUI = (props: ParentProps) => {
     const dimensions = useTerminalDimensions();
@@ -30,7 +36,7 @@ export const createResponsiveTui = <const Rules extends BreakpointRules>(
     });
   };
 
-  const useResponsiveTui = (): Accessor<BreakpointOf<Rules>> => {
+  const useResponsiveTui = (): Accessor<Match> => {
     const breakpoint = useContext(ResponsiveTuiContext);
     if (!breakpoint) {
       throw new ResponsiveTuiProviderError();

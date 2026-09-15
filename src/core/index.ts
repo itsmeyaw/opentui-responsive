@@ -1,40 +1,29 @@
-export type BreakpointCondition = {
-  readonly minWidth?: number;
-  readonly maxWidth?: number;
-  readonly minHeight?: number;
-  readonly maxHeight?: number;
+export type BreakpointThreshold = {
+  readonly width: number;
+  readonly height: number;
 };
 
-export type BreakpointConditions =
-  | BreakpointCondition
-  | readonly [BreakpointCondition, ...BreakpointCondition[]];
-
-export type BreakpointRule<Name extends string = string> = {
-  readonly name: Name;
-  readonly when: BreakpointConditions;
-};
-
-export type BreakpointFallbackRule<Name extends string = string> = {
-  readonly name: Name;
-  readonly when?: never;
-};
-
-export type BreakpointRules = readonly [...BreakpointRule[], BreakpointFallbackRule];
+export type BreakpointTiers = Readonly<Record<string, BreakpointThreshold>>;
 
 export type BreakpointViewport = {
   readonly width: number;
   readonly height: number;
 };
 
-export type BreakpointDefinition<Rules extends BreakpointRules = BreakpointRules> = {
-  readonly match: (viewport: BreakpointViewport) => BreakpointOf<Rules>;
+export type BreakpointMatch<Name extends string = string> = {
+  readonly width: Name;
+  readonly height: Name;
+};
+
+export type BreakpointDefinition<Tiers extends BreakpointTiers = BreakpointTiers> = {
+  readonly match: (viewport: BreakpointViewport) => BreakpointMatch<BreakpointOf<Tiers>>;
 };
 
 export type BreakpointOf<Input> =
-  Input extends BreakpointDefinition<infer Rules>
-    ? Rules[number]["name"]
-    : Input extends BreakpointRules
-      ? Input[number]["name"]
+  Input extends BreakpointDefinition<infer Tiers>
+    ? Extract<keyof Tiers, string>
+    : Input extends BreakpointTiers
+      ? Extract<keyof Input, string>
       : never;
 
 /* oxlint-disable effecttsgo/extends-native-error */
@@ -47,133 +36,77 @@ export class ResponsiveTuiConfigurationError extends Error {
   }
 }
 
-export const defineBreakpoints = <const Rules extends BreakpointRules>(
-  rules: Rules,
-): BreakpointDefinition<Rules> => {
-  validateRules(rules);
+export const defineBreakpoints = <const Tiers extends BreakpointTiers>(
+  tiers: keyof Tiers extends never ? never : Tiers,
+): BreakpointDefinition<Tiers> => {
+  const entries = validateTiers(tiers) as [BreakpointOf<Tiers>, BreakpointThreshold][];
+  const [base, ...rest] = entries;
+  if (!base) throw new ResponsiveTuiConfigurationError("Breakpoint definitions cannot be empty.");
 
   return {
     match: (viewport) => {
-      for (const rule of rules) {
-        if (
-          !("when" in rule) ||
-          (rule.when !== undefined && matchesCondition(rule.when, viewport))
-        ) {
-          return rule.name as BreakpointOf<Rules>;
-        }
+      let width = base[0];
+      let height = base[0];
+
+      for (const [name, threshold] of rest) {
+        if (viewport.width >= threshold.width) width = name;
+        if (viewport.height >= threshold.height) height = name;
       }
 
-      throw new ResponsiveTuiConfigurationError("Breakpoint definitions require a fallback rule.");
+      return { width, height };
     },
   };
 };
 
-const validateRules = (rules: readonly unknown[]): void => {
-  if (rules.length === 0) {
+const validateTiers = (tiers: unknown): [string, BreakpointThreshold][] => {
+  if (!isRecord(tiers) || Array.isArray(tiers)) {
+    throw new ResponsiveTuiConfigurationError("Breakpoint definitions must be an object.");
+  }
+
+  const entries = Object.entries(tiers);
+  if (entries.length === 0) {
     throw new ResponsiveTuiConfigurationError("Breakpoint definitions cannot be empty.");
   }
 
-  const names = new Set<string>();
-  for (const [index, rule] of rules.entries()) {
-    if (!isRecord(rule) || typeof rule.name !== "string" || rule.name.length === 0) {
+  let previousWidth = -1;
+  let previousHeight = -1;
+  for (const [index, [name, threshold]] of entries.entries()) {
+    if (name.length === 0) {
       throw new ResponsiveTuiConfigurationError("Breakpoint names must be non-empty strings.");
     }
-    if (names.has(rule.name)) {
-      throw new ResponsiveTuiConfigurationError(`Duplicate breakpoint name: ${rule.name}.`);
+    if (!isRecord(threshold) || Array.isArray(threshold)) {
+      throw new ResponsiveTuiConfigurationError("Breakpoint thresholds must be objects.");
     }
-    names.add(rule.name);
 
-    const isFinal = index === rules.length - 1;
-    if (isFinal ? "when" in rule : !("when" in rule)) {
+    const unknown = Object.keys(threshold).find((key) => key !== "width" && key !== "height");
+    if (unknown) {
+      throw new ResponsiveTuiConfigurationError(`Unknown breakpoint threshold: ${unknown}.`);
+    }
+    if (!isThreshold(threshold.width) || !isThreshold(threshold.height)) {
       throw new ResponsiveTuiConfigurationError(
-        isFinal
-          ? "The final breakpoint rule must be a fallback without a condition."
-          : "Every non-final breakpoint rule requires a condition.",
+        "Breakpoint thresholds must be finite non-negative integers.",
       );
     }
-    if (!isFinal) {
-      validateCondition(rule.when);
+    if (index === 0 && (threshold.width !== 0 || threshold.height !== 0)) {
+      throw new ResponsiveTuiConfigurationError(
+        "The first breakpoint tier must have width and height thresholds of zero.",
+      );
     }
-  }
-};
-
-const validateCondition = (condition: unknown): void => {
-  if (Array.isArray(condition)) {
-    if (condition.length === 0) {
-      throw new ResponsiveTuiConfigurationError("Breakpoint condition arrays cannot be empty.");
+    if (threshold.width <= previousWidth || threshold.height <= previousHeight) {
+      throw new ResponsiveTuiConfigurationError(
+        "Breakpoint width and height thresholds must strictly increase.",
+      );
     }
-    for (const item of condition) {
-      validateConditionObject(item);
-    }
-    return;
+
+    previousWidth = threshold.width;
+    previousHeight = threshold.height;
   }
 
-  validateConditionObject(condition);
+  return entries as [string, BreakpointThreshold][];
 };
-
-const validateConditionObject = (condition: unknown): void => {
-  if (!isRecord(condition)) {
-    throw new ResponsiveTuiConfigurationError("Breakpoint conditions must be objects.");
-  }
-
-  if (!["minWidth", "maxWidth", "minHeight", "maxHeight"].some((key) => key in condition)) {
-    throw new ResponsiveTuiConfigurationError(
-      "Breakpoint conditions require at least one dimension bound.",
-    );
-  }
-
-  const allowedBounds = new Set(["minWidth", "maxWidth", "minHeight", "maxHeight"]);
-  const unknown = Object.keys(condition).find((key) => !allowedBounds.has(key));
-  if (unknown) {
-    throw new ResponsiveTuiConfigurationError(`Unknown breakpoint condition: ${unknown}.`);
-  }
-
-  validateBounds(condition, "minWidth", "maxWidth");
-  validateBounds(condition, "minHeight", "maxHeight");
-};
-
-const validateBounds = (
-  condition: Record<string, unknown>,
-  minimum: "minWidth" | "minHeight",
-  maximum: "maxWidth" | "maxHeight",
-): void => {
-  const min = condition[minimum];
-  const max = condition[maximum];
-  if (!isBound(min) || !isBound(max)) {
-    throw new ResponsiveTuiConfigurationError(
-      "Breakpoint bounds must be finite non-negative integers.",
-    );
-  }
-  if (min !== undefined && max !== undefined && min > max) {
-    throw new ResponsiveTuiConfigurationError(
-      "Breakpoint minimum bounds cannot exceed maximum bounds.",
-    );
-  }
-};
-
-const matchesCondition = (
-  condition: BreakpointConditions,
-  viewport: BreakpointViewport,
-): boolean => {
-  if (Array.isArray(condition)) {
-    return condition.some((item) => matchesConditionObject(item, viewport));
-  }
-
-  return matchesConditionObject(condition as BreakpointCondition, viewport);
-};
-
-const matchesConditionObject = (
-  bounds: BreakpointCondition,
-  viewport: BreakpointViewport,
-): boolean =>
-  (bounds.minWidth === undefined || viewport.width >= bounds.minWidth) &&
-  (bounds.maxWidth === undefined || viewport.width <= bounds.maxWidth) &&
-  (bounds.minHeight === undefined || viewport.height >= bounds.minHeight) &&
-  (bounds.maxHeight === undefined || viewport.height <= bounds.maxHeight);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const isBound = (value: unknown): value is number | undefined =>
-  value === undefined ||
-  (typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 0);
+const isThreshold = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 0;
