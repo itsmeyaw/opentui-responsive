@@ -30,6 +30,15 @@ if (Bun.env.TYPE_TESTS) {
   void widthNameComparedWithHeight;
   void invalidHeightComparison;
   breakpoint(["compact", "tall"]);
+  breakpoint.below("width", "wide");
+  breakpoint.atMost(["compact", "tall"]);
+  breakpoint.only("height", "short");
+  breakpoint.atLeast(["wide", "tall"]);
+  breakpoint.above("height", "short");
+  // @ts-expect-error width-only names cannot be used for height comparisons
+  breakpoint.atLeast("height", "wide");
+  // @ts-expect-error pair order is width then height
+  breakpoint.above(["short", "wide"]);
   // @ts-expect-error both axis scales are required
   createResponsiveTui({ width: { compact: 0 } });
   // @ts-expect-error each axis scale must include zero
@@ -89,6 +98,42 @@ test("reactively matches an exact width and height pair", async () => {
       await setup.renderOnce();
     });
     expect(setup.captureCharFrame()).toContain("false/true");
+  } finally {
+    act(() => setup.renderer.destroy());
+  }
+});
+
+test("reactively compares one-axis and two-axis breakpoint relations", async () => {
+  const App = () => {
+    const breakpoint = responsiveTui.useBreakpoint();
+    return createElement(
+      "text",
+      null,
+      [
+        breakpoint.below(["wide", "tall"]),
+        breakpoint.atMost(["compact", "short"]),
+        breakpoint.only(["compact", "short"]),
+        breakpoint.atLeast("width", "wide"),
+        breakpoint.above(["compact", "short"]),
+      ]
+        .map((value) => Number(value))
+        .join("/"),
+    );
+  };
+  const setup = await testRender(
+    createElement(responsiveTui.ResponsiveTUI, null, createElement(App)),
+    { height: 4, width: 20 },
+  );
+
+  try {
+    await setup.renderOnce();
+    expect(setup.captureCharFrame()).toContain("1/1/1/0/0");
+
+    await act(async () => {
+      setup.resize(40, 10);
+      await setup.renderOnce();
+    });
+    expect(setup.captureCharFrame()).toContain("0/0/0/1/1");
   } finally {
     act(() => setup.renderer.destroy());
   }
