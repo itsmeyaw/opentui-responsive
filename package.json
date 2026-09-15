@@ -1,6 +1,6 @@
 {
   "name": "opentui-responsive",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Typed responsive breakpoints for OpenTUI.",
   "license": "MIT",
   "repository": {
