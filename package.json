@@ -24,16 +24,23 @@
       "types": "./dist/solid/index.d.ts",
       "import": "./dist/solid/index.js",
       "default": "./dist/solid/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "default": "./dist/react/index.js"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "accept:node": "node scripts/accept-node-core.mjs && node --experimental-ffi scripts/accept-node-solid.mjs",
+    "accept:node": "node scripts/accept-node-core.mjs && node --experimental-ffi scripts/accept-node-solid.mjs && node --experimental-ffi scripts/accept-node-react.mjs",
     "build": "bun build.ts && tsc -p tsconfig.build.json",
     "check": "bun run format:check && bun run lint && bun run typecheck && bun test && bun run build && bun run check:package && bun run accept:node",
     "check:package": "bun package-check.ts && publint --strict && attw --pack . --profile esm-only",
+    "demo": "bun --preload @opentui/solid/preload examples/solid.tsx",
+    "demo:react": "bun examples/react.tsx",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint --deny-warnings .",
@@ -43,20 +50,32 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
+    "@opentui/core": "0.5.11",
+    "@opentui/react": "0.5.11",
     "@opentui/solid": "0.5.11",
     "@types/bun": "latest",
+    "@types/react": "19.2.0",
     "oxfmt": "latest",
     "oxlint": "1.82.0",
     "publint": "0.3.24",
+    "react": "19.2.0",
     "solid-js": "1.9.12",
     "typescript": "5.9.3"
   },
   "peerDependencies": {
+    "@opentui/react": "^0.5.11",
     "@opentui/solid": "^0.5.11",
+    "react": ">=19.2.0",
     "solid-js": "1.9.12"
   },
   "peerDependenciesMeta": {
+    "@opentui/react": {
+      "optional": true
+    },
     "@opentui/solid": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     },
     "solid-js": {

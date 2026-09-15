@@ -8,5 +8,5 @@
     "rootDir": "src"
   },
   "include": [],
-  "files": ["src/core/index.ts", "src/solid/index.tsx"]
+  "files": ["src/core/index.ts", "src/react/index.ts", "src/solid/index.tsx"]
 }

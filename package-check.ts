@@ -1,6 +1,8 @@
 const exportTargets = [
   "dist/core/index.js",
   "dist/core/index.d.ts",
+  "dist/react/index.js",
+  "dist/react/index.d.ts",
   "dist/solid/index.js",
   "dist/solid/index.d.ts",
 ] as const;
@@ -35,6 +37,12 @@ const coreBundle = await Bun.build({
 if (!coreBundle.success) throw new PackageCheckError("The core export could not be bundled.");
 
 const bundledCore = await coreBundle.outputs[0]?.text();
-if (!bundledCore || bundledCore.includes("solid-js") || bundledCore.includes("@opentui/solid")) {
-  throw new PackageCheckError("The core export must not include Solid or OpenTUI.");
+if (
+  !bundledCore ||
+  bundledCore.includes("solid-js") ||
+  bundledCore.includes("@opentui/solid") ||
+  bundledCore.includes("react") ||
+  bundledCore.includes("@opentui/react")
+) {
+  throw new PackageCheckError("The core export must not include framework or OpenTUI imports.");
 }

@@ -1,6 +1,6 @@
 # opentui-responsive
 
-Typed responsive breakpoints for OpenTUI, with a framework-neutral core and a Solid adapter.
+Typed responsive breakpoints for OpenTUI, with a framework-neutral core and React and Solid adapters.
 
 ## Install
 
@@ -12,7 +12,26 @@ bun add opentui-responsive @opentui/solid solid-js
 npm install opentui-responsive @opentui/solid solid-js
 ```
 
+For OpenTUI React applications:
+
+```sh
+bun add opentui-responsive @opentui/react react
+# or
+npm install opentui-responsive @opentui/react react
+```
+
 Core-only consumers only need `opentui-responsive`.
+
+## Demo
+
+From this package's directory, run:
+
+```sh
+bun run demo # Solid
+bun run demo:react # React
+```
+
+Both demos resize with the terminal and exit with Ctrl+C.
 
 ## Solid
 
@@ -68,6 +87,37 @@ breakpoint().height === "extra-tall";
 // Type error: "extra-tall" is not a configured height breakpoint
 ```
 
+## React
+
+The React adapter exposes the same factory, provider, hook, and inferred breakpoint types:
+
+```tsx
+import { defineBreakpoints } from "opentui-responsive/core";
+import { createResponsiveTui } from "opentui-responsive/react";
+
+const breakpoints = defineBreakpoints({
+  width: { narrow: 0, medium: 60, wide: 100 },
+  height: { short: 0, medium: 12, tall: 20 },
+});
+
+const { ResponsiveTUI, useResponsiveTui } = createResponsiveTui(breakpoints);
+
+function App() {
+  return (
+    <ResponsiveTUI>
+      <Content />
+    </ResponsiveTUI>
+  );
+}
+
+function Content() {
+  const breakpoint = useResponsiveTui();
+  return <text>{`${breakpoint().width}/${breakpoint().height}`}</text>;
+}
+```
+
+The hook updates its consumers when terminal dimensions cross a configured threshold. Exact `[width, height]` pair checks and inferred name validation work the same as in the Solid adapter.
+
 ## Tiers
 
 Width and height define independent sets of inclusive minimum thresholds in terminal cells. Each axis is matched to its highest satisfied threshold, so the number and names of options can differ between axes.
@@ -112,7 +162,7 @@ type HeightBreakpoint = BreakpointOf<typeof breakpoints, "height">;
 
 ## Packaging
 
-The package is ESM-only. `opentui-responsive/core` and `opentui-responsive/solid` are separate package entrypoints, and the package is marked side-effect free so modern bundlers can remove unused exports. Importing `/core` does not load Solid or OpenTUI.
+The package is ESM-only. `opentui-responsive/core`, `opentui-responsive/react`, and `opentui-responsive/solid` are separate package entrypoints, and the package is marked side-effect free so modern bundlers can remove unused exports. Importing `/core` does not load React, Solid, or OpenTUI.
 
 ## Runtime support
 
@@ -124,7 +174,7 @@ The `/core` entrypoint is pure JavaScript and does not require native FFI:
 node core-example.mjs
 ```
 
-The `/solid` entrypoint inherits OpenTUI's native runtime requirements. Start Node.js applications that use it with:
+The `/react` and `/solid` entrypoints inherit OpenTUI's native runtime requirements. Start Node.js applications that use either adapter with:
 
 ```sh
 node --experimental-ffi app.mjs

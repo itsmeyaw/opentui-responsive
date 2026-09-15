@@ -19,6 +19,13 @@ const builds = await Promise.all([
     plugins: [solidPlugin],
     target: "node",
   }),
+  Bun.build({
+    entrypoints: [`${import.meta.dir}/src/react/index.ts`],
+    format: "esm",
+    outdir: `${import.meta.dir}/dist/react`,
+    packages: "external",
+    target: "node",
+  }),
 ]);
 
 if (builds.some((result) => !result.success)) process.exit(1);

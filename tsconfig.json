@@ -17,5 +17,5 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true
   },
-  "include": ["*.ts", "src/**/*.ts", "src/**/*.tsx"]
+  "include": ["*.ts", "examples/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }
