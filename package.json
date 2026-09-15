@@ -9,7 +9,6 @@
   },
   "files": [
     "dist",
-    "docs/assets/demo.gif",
     "README.md",
     "LICENSE"
   ],

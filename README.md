@@ -7,7 +7,7 @@
   </p>
   <p>Typed responsive breakpoints for OpenTUI, with a framework-neutral core and React and Solid adapters.</p>
   <p align="center">
-  <img src="docs/assets/demo.gif" alt="opentui-responsive terminal demo">
+  <img src="https://raw.githubusercontent.com/itsmeyaw/opentui-responsive/main/docs/assets/demo.gif" alt="opentui-responsive terminal demo">
 </p>
 </div>
 
