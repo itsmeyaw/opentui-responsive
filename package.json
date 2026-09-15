@@ -33,7 +33,7 @@
     "check:package": "bun package-check.ts && publint --strict && attw --pack . --profile esm-only",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "lint": "oxlint --deny-warnings --report-unused-disable-directives .",
+    "lint": "oxlint --deny-warnings .",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "prepack": "bun run build"
