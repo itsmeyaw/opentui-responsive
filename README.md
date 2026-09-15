@@ -42,6 +42,7 @@ import { createResponsiveTui } from "opentui-responsive/solid";
 import type { ParentProps } from "solid-js";
 
 export const { ResponsiveTUI, useResponsiveTui } = createResponsiveTui({
+  // Required: each axis must include a 0 threshold.
   width: { narrow: 0, medium: 60, wide: 100 },
   height: { short: 0, medium: 16, tall: 28 },
 });
