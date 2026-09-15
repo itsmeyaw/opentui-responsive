@@ -8,12 +8,14 @@ import type {
   BreakpointScales,
 } from "../core/index.js";
 
+/** A React accessor that reads or tests the current breakpoint pair. */
 export type ResponsiveBreakpointAccessor<Scales extends BreakpointScales = BreakpointScales> = {
   (): BreakpointMatch<Scales>;
   (pair: BreakpointPair<Scales>): boolean;
 };
 
 /* oxlint-disable effecttsgo/extends-native-error */
+/** Thrown when a responsive hook is used outside its generated React provider. */
 export class ResponsiveTuiProviderError extends Error {
   readonly _tag = "ResponsiveTuiProviderError";
 
@@ -23,6 +25,7 @@ export class ResponsiveTuiProviderError extends Error {
   }
 }
 
+/** Creates a React provider and hook bound to one breakpoint definition. */
 export const createResponsiveTui = <const Scales extends BreakpointScales>(
   breakpoints: BreakpointDefinition<Scales>,
 ) => {

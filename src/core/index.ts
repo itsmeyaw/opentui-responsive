@@ -1,31 +1,41 @@
+/** A terminal dimension used to select a breakpoint. */
 export type BreakpointAxis = "width" | "height";
 
+/** Named inclusive minimum thresholds for one terminal dimension. */
 export type BreakpointScale = Readonly<Record<string, number>>;
 
+/** Independent breakpoint scales for terminal width and height. */
 export type BreakpointScales = {
   readonly width: BreakpointScale;
   readonly height: BreakpointScale;
 };
 
+/** Terminal dimensions in cells. */
 export type BreakpointViewport = {
   readonly width: number;
   readonly height: number;
 };
 
+/** The breakpoint name matched on each axis. */
 export type BreakpointMatch<Scales extends BreakpointScales = BreakpointScales> = {
   readonly [Axis in BreakpointAxis]: Extract<keyof Scales[Axis], string>;
 };
 
+/** An exact breakpoint pair in width-then-height order. */
 export type BreakpointPair<Scales extends BreakpointScales = BreakpointScales> = readonly [
   width: BreakpointMatch<Scales>["width"],
   height: BreakpointMatch<Scales>["height"],
 ];
 
+/** A validated breakpoint definition that matches explicit terminal dimensions. */
 export type BreakpointDefinition<Scales extends BreakpointScales = BreakpointScales> = {
+  /** Returns the highest inclusive breakpoint reached on each axis. */
   readonly match: (viewport: BreakpointViewport) => BreakpointMatch<Scales>;
+  /** Tests whether a viewport matches an exact width and height pair. */
   readonly matches: (viewport: BreakpointViewport, pair: BreakpointPair<Scales>) => boolean;
 };
 
+/** Extracts the configured breakpoint-name union for one axis. */
 export type BreakpointOf<Input, Axis extends BreakpointAxis> =
   Input extends BreakpointDefinition<infer Scales>
     ? Extract<keyof Scales[Axis], string>
@@ -34,6 +44,7 @@ export type BreakpointOf<Input, Axis extends BreakpointAxis> =
       : never;
 
 /* oxlint-disable effecttsgo/extends-native-error */
+/** Thrown when breakpoint scales cannot produce a valid definition. */
 export class ResponsiveTuiConfigurationError extends Error {
   readonly _tag = "ResponsiveTuiConfigurationError";
 
@@ -43,6 +54,10 @@ export class ResponsiveTuiConfigurationError extends Error {
   }
 }
 
+/**
+ * Creates a typed breakpoint definition from inclusive width and height thresholds.
+ * Each axis must contain a zero threshold.
+ */
 export const defineBreakpoints = <const Scales extends BreakpointScales>(
   scales: Scales & Record<Exclude<keyof Scales, BreakpointAxis>, never>,
 ): BreakpointDefinition<Scales> => {

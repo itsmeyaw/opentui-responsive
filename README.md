@@ -1,8 +1,17 @@
-# opentui-responsive
+<div align="center">
+  <h1>opentui-responsive</h1>
+  <p>
+    <a href="https://www.npmjs.com/package/opentui-responsive"><img src="https://img.shields.io/npm/v/opentui-responsive" alt="npm version"></a>
+    <a href="https://github.com/itsmeyaw/opentui-responsive/actions/workflows/ci.yml"><img src="https://github.com/itsmeyaw/opentui-responsive/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+    <a href="https://github.com/itsmeyaw/opentui-responsive/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/opentui-responsive" alt="MIT license"></a>
+  </p>
+  <p>Typed responsive breakpoints for OpenTUI, with a framework-neutral core and React and Solid adapters.</p>
+  <p align="center">
+  <img src="docs/assets/demo.gif" alt="opentui-responsive terminal demo">
+</p>
+</div>
 
-Typed responsive breakpoints for OpenTUI, with a framework-neutral core and React and Solid adapters.
-
-## Install
+## Installation
 
 For OpenTUI Solid applications:
 
@@ -22,85 +31,31 @@ npm install opentui-responsive @opentui/react react
 
 Core-only consumers only need `opentui-responsive`.
 
-## Demo
+## Usage
 
-From this package's directory, run:
-
-```sh
-bun run demo # Solid
-bun run demo:react # React
-```
-
-Both demos resize with the terminal and exit with Ctrl+C.
-
-## Solid
-
-Define mobile-first tiers once, then create a provider and hook bound to that definition:
+Define mobile-first tiers, then create a Solid provider and hook bound to that definition:
 
 ```tsx
 import { defineBreakpoints } from "opentui-responsive/core";
 import { createResponsiveTui } from "opentui-responsive/solid";
 
 const breakpoints = defineBreakpoints({
-  width: {
-    narrow: 0,
-    medium: 60,
-    wide: 100,
-  },
-  height: {
-    short: 0,
-    medium: 12,
-    tall: 20,
-  },
-});
-
-const { ResponsiveTUI, useResponsiveTui } = createResponsiveTui(breakpoints);
-
-function App() {
-  return (
-    <ResponsiveTUI>
-      <Content />
-    </ResponsiveTUI>
-  );
-}
-
-function Content() {
-  const breakpoint = useResponsiveTui();
-  return <text>{`${breakpoint().width}/${breakpoint().height}`}</text>;
-}
-```
-
-`useResponsiveTui()` returns a Solid accessor. Each axis has its own inferred name union and updates when that terminal dimension crosses a configured threshold. In this example, width is `"narrow" | "medium" | "wide"`, height is `"short" | "medium" | "tall"`, and a `120 x 10` terminal returns `{ width: "wide", height: "short" }`.
-
-Pass an exact `[width, height]` pair to check both axes reactively:
-
-```ts
-breakpoint(["narrow", "tall"]); // boolean
-```
-
-The pair must contain exactly one configured name for each axis, in width-then-height order.
-
-TypeScript rejects names that are not configured for that axis:
-
-```ts
-breakpoint().height === "extra-tall";
-// Type error: "extra-tall" is not a configured height breakpoint
-```
-
-## React
-
-The React adapter exposes the same factory, provider, hook, and inferred breakpoint types:
-
-```tsx
-import { defineBreakpoints } from "opentui-responsive/core";
-import { createResponsiveTui } from "opentui-responsive/react";
-
-const breakpoints = defineBreakpoints({
   width: { narrow: 0, medium: 60, wide: 100 },
-  height: { short: 0, medium: 12, tall: 20 },
+  height: { short: 0, medium: 16, tall: 28 },
 });
 
 const { ResponsiveTUI, useResponsiveTui } = createResponsiveTui(breakpoints);
+
+function Content() {
+  const breakpoint = useResponsiveTui();
+
+  return (
+    <box flexDirection={breakpoint().width === "wide" ? "row" : "column"}>
+      <text>{`${breakpoint().width}/${breakpoint().height}`}</text>
+      <text>{breakpoint(["wide", "tall"]) ? "Full layout" : "Compact layout"}</text>
+    </box>
+  );
+}
 
 function App() {
   return (
@@ -109,79 +64,63 @@ function App() {
     </ResponsiveTUI>
   );
 }
-
-function Content() {
-  const breakpoint = useResponsiveTui();
-  return <text>{`${breakpoint().width}/${breakpoint().height}`}</text>;
-}
 ```
 
-The hook updates its consumers when terminal dimensions cross a configured threshold. Exact `[width, height]` pair checks and inferred name validation work the same as in the Solid adapter.
+`useResponsiveTui()` updates when the terminal crosses a configured threshold. Its accessor returns the current width and height names, or accepts an exact `[width, height]` pair and returns whether both axes match.
 
-## Tiers
+Run `bun run demo` from the package directory to try the Solid example. Resize the terminal to see its layout respond.
 
-Width and height define independent sets of inclusive minimum thresholds in terminal cells. Each axis is matched to its highest satisfied threshold, so the number and names of options can differ between axes.
+The React adapter has the same factory, provider, hook, and inferred breakpoint types; import `createResponsiveTui` from `opentui-responsive/react` instead.
 
-Breakpoint names must be non-empty strings. Thresholds must be unique finite non-negative integers within their axis.
+## API Reference
 
-Each axis must include a zero threshold so every terminal dimension has a match:
+### `opentui-responsive/core`
+
+| API                                  | Description                                                                          |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| `defineBreakpoints(scales)`          | Validates width and height scales and returns typed `match` and `matches` functions. |
+| `definition.match(viewport)`         | Returns the highest inclusive breakpoint reached on each axis.                       |
+| `definition.matches(viewport, pair)` | Tests an exact `[width, height]` breakpoint pair.                                    |
+| `BreakpointOf<Input, Axis>`          | Extracts the inferred breakpoint-name union for one axis.                            |
+| `BreakpointAxis`                     | The `"width" \| "height"` axis union.                                                |
+| `BreakpointScale`                    | A map of breakpoint names to minimum terminal-cell thresholds.                       |
+| `BreakpointScales`                   | The width and height scale configuration.                                            |
+| `BreakpointViewport`                 | Explicit width and height dimensions to match.                                       |
+| `BreakpointMatch`                    | The matched breakpoint name for each axis.                                           |
+| `BreakpointPair`                     | An exact breakpoint pair in width-then-height order.                                 |
+| `BreakpointDefinition`               | The typed result of `defineBreakpoints`.                                             |
+| `ResponsiveTuiConfigurationError`    | Thrown when breakpoint scales are invalid.                                           |
+
+### `opentui-responsive/solid` and `opentui-responsive/react`
+
+| API                               | Description                                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `createResponsiveTui(definition)` | Creates a framework-specific `ResponsiveTUI` provider and `useResponsiveTui` hook. |
+| `ResponsiveTUI`                   | Tracks terminal dimensions and provides the current breakpoint accessor.           |
+| `useResponsiveTui()`              | Reads the accessor from the nearest generated provider.                            |
+| `ResponsiveBreakpointAccessor`    | Reads the current match or tests an exact breakpoint pair.                         |
+| `ResponsiveTuiProviderError`      | Thrown when the generated hook is called outside its provider.                     |
+
+## Breakpoint Behavior
+
+Width and height use independent sets of inclusive minimum thresholds measured in terminal cells. Each axis must contain a zero threshold so every terminal size has a match. Names must be non-empty, and thresholds must be unique finite non-negative integers within their axis.
+
+Declaration order does not affect matching. Each axis selects its highest satisfied threshold:
 
 ```ts
-width: { narrow: 0, medium: 60, wide: 100 },
-height: { short: 0, medium: 12, tall: 20 },
+const breakpoints = defineBreakpoints({
+  width: { wide: 100, narrow: 0, medium: 60 },
+  height: { tall: 28, short: 0, medium: 16 },
+});
+
+breakpoints.match({ width: 120, height: 10 });
+// { width: "wide", height: "short" }
 ```
-
-Declaration order does not affect matching:
-
-```ts
-width: { wide: 100, narrow: 0, medium: 60 },
-```
-
-Invalid definitions throw `ResponsiveTuiConfigurationError` during configuration. Calling a generated hook outside its provider throws `ResponsiveTuiProviderError`.
 
 Use breakpoints for discrete layout modes. Keep continuous measurements such as progress-bar width and available list height on OpenTUI's `useTerminalDimensions()`.
 
-## Core
+## Runtime Support
 
-The core definition has no framework dependencies and can match explicit dimensions directly:
+The package is ESM-only and supports Bun 1.3.0 or later and Node.js 26.4.0 or later. CommonJS `require()` is not supported.
 
-```ts
-const current = breakpoints.match({ width: 120, height: 10 });
-// { width: "wide", height: "short" }
-
-const exact = breakpoints.matches({ width: 120, height: 10 }, ["wide", "short"]);
-// true
-```
-
-Extract an axis's inferred name union with `BreakpointOf`:
-
-```ts
-type WidthBreakpoint = BreakpointOf<typeof breakpoints, "width">;
-type HeightBreakpoint = BreakpointOf<typeof breakpoints, "height">;
-```
-
-## Packaging
-
-The package is ESM-only. `opentui-responsive/core`, `opentui-responsive/react`, and `opentui-responsive/solid` are separate package entrypoints, and the package is marked side-effect free so modern bundlers can remove unused exports. Importing `/core` does not load React, Solid, or OpenTUI.
-
-## Runtime support
-
-The package supports Bun 1.3.0 or later and Node.js 26.4.0 or later. Node.js applications must use ESM. CommonJS `require()` is not supported.
-
-The `/core` entrypoint is pure JavaScript and does not require native FFI:
-
-```sh
-node core-example.mjs
-```
-
-The `/react` and `/solid` entrypoints inherit OpenTUI's native runtime requirements. Start Node.js applications that use either adapter with:
-
-```sh
-node --experimental-ffi app.mjs
-```
-
-Use Bun 1.4.0 or later on native Windows arm64.
-
-## Publishing
-
-Publishing a GitHub release whose tag matches the package version triggers `.github/workflows/publish.yml`. Configure npm trusted publishing for the `itsmeyaw/opentui-responsive` repository, the `publish.yml` workflow, and direct `npm publish` access; no `NPM_TOKEN` secret is used.
+The `/core` entrypoint is pure JavaScript and does not require native FFI. The `/react` and `/solid` entrypoints inherit OpenTUI's native runtime requirements; Node.js applications using an adapter must start with `node --experimental-ffi app.mjs`. Use Bun 1.4.0 or later on native Windows arm64.
