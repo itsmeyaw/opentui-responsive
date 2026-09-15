@@ -1,7 +1,7 @@
-import { useResponsiveTui } from "./layout.tsx";
+import { useBreakpoint } from "./layout.tsx";
 
 export function Content() {
-  const breakpoint = useResponsiveTui();
+  const breakpoint = useBreakpoint();
   const wideAndTall = () => breakpoint(["wide", "tall"]);
 
   return (

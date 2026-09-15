@@ -1,9 +1,9 @@
 /** @jsxImportSource @opentui/react */
 
-import { useResponsiveTui } from "./layout.tsx";
+import { useBreakpoint } from "./layout.tsx";
 
 export function Content() {
-  const breakpoint = useResponsiveTui();
+  const breakpoint = useBreakpoint();
   const current = breakpoint();
   const wideAndTall = breakpoint(["wide", "tall"]);
 

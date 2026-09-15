@@ -8,4 +8,4 @@ const responsive = createResponsiveTui({
 });
 
 assert.equal(typeof responsive.ResponsiveTUI, "function");
-assert.equal(typeof responsive.useResponsiveTui, "function");
+assert.equal(typeof responsive.useBreakpoint, "function");

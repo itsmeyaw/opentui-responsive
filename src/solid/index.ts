@@ -22,7 +22,7 @@ export class ResponsiveTuiProviderError extends Error {
   readonly _tag = "ResponsiveTuiProviderError";
 
   constructor() {
-    super("useResponsiveTui must be used within a ResponsiveTUI");
+    super("useBreakpoint must be used within a ResponsiveTUI");
     this.name = this._tag;
   }
 }
@@ -50,7 +50,7 @@ export const createResponsiveTui = <const Scales extends BreakpointScales>(
     });
   };
 
-  const useResponsiveTui = (): ResponsiveBreakpointAccessor<Scales> => {
+  const useBreakpoint = (): ResponsiveBreakpointAccessor<Scales> => {
     const breakpoint = useContext(ResponsiveTuiContext);
     if (!breakpoint) {
       throw new ResponsiveTuiProviderError();
@@ -58,5 +58,5 @@ export const createResponsiveTui = <const Scales extends BreakpointScales>(
     return breakpoint;
   };
 
-  return { ResponsiveTUI, useResponsiveTui };
+  return { ResponsiveTUI, useBreakpoint };
 };

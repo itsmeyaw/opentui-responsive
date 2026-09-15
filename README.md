@@ -41,7 +41,7 @@ Create the responsive provider in your layout, then use its hook directly in chi
 import { createResponsiveTui } from "opentui-responsive/solid";
 import type { ParentProps } from "solid-js";
 
-export const { ResponsiveTUI, useResponsiveTui } = createResponsiveTui({
+export const { ResponsiveTUI, useBreakpoint } = createResponsiveTui({
   // Required: each axis must include a 0 threshold.
   width: { narrow: 0, medium: 60, wide: 100 },
   height: { short: 0, medium: 16, tall: 28 },
@@ -55,10 +55,10 @@ export function Layout(props: ParentProps) {
 `src/content.tsx`
 
 ```tsx
-import { useResponsiveTui } from "./layout.tsx";
+import { useBreakpoint } from "./layout.tsx";
 
 export function Content() {
-  const breakpoint = useResponsiveTui();
+  const breakpoint = useBreakpoint();
   // You can use it to directly check [width, height] breakpoint
   const isWideAndTall = breakpoint(["wide", "tall"]);
 
@@ -87,7 +87,7 @@ export function App() {
 }
 ```
 
-`useResponsiveTui()` updates when the terminal crosses a configured threshold. Its accessor returns the current width and height names, or accepts an exact `[width, height]` pair and returns whether both axes match.
+`useBreakpoint()` updates when the terminal crosses a configured threshold. Its accessor returns the current width and height names, or accepts an exact `[width, height]` pair and returns whether both axes match.
 
 Run `bun run demo` from the package directory to try the Solid example. Resize the terminal to see its layout respond.
 
@@ -97,14 +97,14 @@ The React adapter has the same factory, provider, hook, and inferred breakpoint 
 
 ### `opentui-responsive/solid` and `opentui-responsive/react`
 
-| API                               | Description                                                                              |
-| --------------------------------- | ---------------------------------------------------------------------------------------- |
-| `createResponsiveTui(scales)`     | Validates the scales and creates a `ResponsiveTUI` provider and `useResponsiveTui` hook. |
-| `ResponsiveTUI`                   | Tracks terminal dimensions and provides the current breakpoint accessor.                 |
-| `useResponsiveTui()`              | Reads the accessor from the nearest generated provider.                                  |
-| `ResponsiveBreakpointAccessor`    | Reads the current match or tests an exact breakpoint pair.                               |
-| `ResponsiveTuiConfigurationError` | Thrown when the supplied breakpoint scales are invalid.                                  |
-| `ResponsiveTuiProviderError`      | Thrown when the generated hook is called outside its provider.                           |
+| API                               | Description                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| `createResponsiveTui(scales)`     | Validates the scales and creates a `ResponsiveTUI` provider and `useBreakpoint` hook. |
+| `ResponsiveTUI`                   | Tracks terminal dimensions and provides the current breakpoint accessor.              |
+| `useBreakpoint()`                 | Reads the accessor from the nearest generated provider.                               |
+| `ResponsiveBreakpointAccessor`    | Reads the current match or tests an exact breakpoint pair.                            |
+| `ResponsiveTuiConfigurationError` | Thrown when the supplied breakpoint scales are invalid.                               |
+| `ResponsiveTuiProviderError`      | Thrown when the generated hook is called outside its provider.                        |
 
 ### `opentui-responsive/core`
 

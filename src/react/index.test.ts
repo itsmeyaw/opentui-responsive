@@ -22,7 +22,7 @@ const responsiveTui = createResponsiveTui({
 });
 
 if (Bun.env.TYPE_TESTS) {
-  const breakpoint = responsiveTui.useResponsiveTui();
+  const breakpoint = responsiveTui.useBreakpoint();
   // @ts-expect-error width-only names cannot be compared with height
   const widthNameComparedWithHeight = breakpoint().height === "wide";
   // @ts-expect-error unconfigured height names cannot be compared
@@ -44,7 +44,7 @@ if (Bun.env.TYPE_TESTS) {
 
 test("provides the initial breakpoint and updates it after a resize", async () => {
   const App = () => {
-    const breakpoint = responsiveTui.useResponsiveTui();
+    const breakpoint = responsiveTui.useBreakpoint();
     return createElement("text", null, `${breakpoint().width}/${breakpoint().height}`);
   };
   const setup = await testRender(
@@ -68,7 +68,7 @@ test("provides the initial breakpoint and updates it after a resize", async () =
 
 test("reactively matches an exact width and height pair", async () => {
   const App = () => {
-    const breakpoint = responsiveTui.useResponsiveTui();
+    const breakpoint = responsiveTui.useBreakpoint();
     return createElement(
       "text",
       null,
@@ -97,7 +97,7 @@ test("reactively matches an exact width and height pair", async () => {
 test("keeps child state when the breakpoint changes", async () => {
   let increment!: () => void;
   const Child = () => {
-    const breakpoint = responsiveTui.useResponsiveTui();
+    const breakpoint = responsiveTui.useBreakpoint();
     const [count, setCount] = useState(0);
     increment = () => setCount((value) => value + 1);
     return createElement("text", null, `${breakpoint().width}/${breakpoint().height}:${count}`);
@@ -140,7 +140,7 @@ test("throws a typed error when used outside its provider", async () => {
     }
   }
   const App = () => {
-    responsiveTui.useResponsiveTui();
+    responsiveTui.useBreakpoint();
     return createElement("text", null, "unreachable");
   };
   const consoleError = spyOn(console, "error").mockImplementation(() => undefined);
@@ -169,8 +169,8 @@ test("keeps contexts created by different factories isolated", async () => {
     height: { low: 0, high: 10 },
   });
   const App = () => {
-    const breakpoint = responsiveTui.useResponsiveTui();
-    const otherBreakpoint = otherResponsiveTui.useResponsiveTui();
+    const breakpoint = responsiveTui.useBreakpoint();
+    const otherBreakpoint = otherResponsiveTui.useBreakpoint();
     return createElement("text", null, `${breakpoint().width}/${otherBreakpoint().width}`);
   };
   const setup = await testRender(
