@@ -33,7 +33,7 @@ Core-only consumers only need `opentui-responsive`.
 
 ## Usage
 
-Define mobile-first tiers, then create a Solid provider and hook bound to that definition:
+Define breakpoint tiers, then create a provider and hook bound to that definition:
 
 ```tsx
 import { defineBreakpoints } from "opentui-responsive/core";
