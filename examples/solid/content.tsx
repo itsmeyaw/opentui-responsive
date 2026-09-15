@@ -3,6 +3,7 @@ import { useBreakpoint } from "./layout.tsx";
 export function Content() {
   const breakpoint = useBreakpoint();
   const wideAndTall = () => breakpoint(["wide", "tall"]);
+  const medium = ["medium", "medium"] as const;
 
   return (
     <box flexDirection="column" flexGrow={1} padding={1}>
@@ -26,6 +27,12 @@ export function Content() {
           ? "Wide and tall layout active."
           : "Resize to wide and tall for the full layout."}
       </text>
+      <text marginTop={1}>Relations to medium/medium:</text>
+      <text>{`below: ${breakpoint.below(medium)}`}</text>
+      <text>{`atMost: ${breakpoint.atMost(medium)}`}</text>
+      <text>{`only: ${breakpoint.only(medium)}`}</text>
+      <text>{`atLeast: ${breakpoint.atLeast(medium)}`}</text>
+      <text>{`above: ${breakpoint.above(medium)}`}</text>
     </box>
   );
 }
