@@ -48,7 +48,7 @@ function Content() {
 
 Every tier defines inclusive minimum `width` and `height` thresholds in terminal cells. Width and height are matched independently to the highest satisfied tier, so wide and short terminals retain both classifications.
 
-Tier names must be non-empty, non-numeric strings because JavaScript reorders integer object keys.
+Tier names must be non-empty strings. Non-negative integer names are rejected because JavaScript reorders integer object keys.
 
 The first tier must start both axes at zero:
 
