@@ -49,7 +49,7 @@ export type BreakpointDefinition<Scales extends BreakpointScales = BreakpointSca
   readonly matches: (viewport: BreakpointViewport, pair: BreakpointPair<Scales>) => boolean;
   readonly below: BreakpointRelationMatcher<Scales>;
   readonly atMost: BreakpointRelationMatcher<Scales>;
-  readonly only: BreakpointRelationMatcher<Scales>;
+  readonly is: BreakpointRelationMatcher<Scales>;
   readonly atLeast: BreakpointRelationMatcher<Scales>;
   readonly above: BreakpointRelationMatcher<Scales>;
 };
@@ -78,16 +78,16 @@ export const createBreakpointDefinition = <const Scales extends BreakpointScales
   });
   const below = createRelationMatcher<Scales>(entries, "below");
   const atMost = createRelationMatcher<Scales>(entries, "atMost");
-  const only = createRelationMatcher<Scales>(entries, "only");
+  const is = createRelationMatcher<Scales>(entries, "is");
   const atLeast = createRelationMatcher<Scales>(entries, "atLeast");
   const above = createRelationMatcher<Scales>(entries, "above");
 
   return {
     match,
-    matches: (viewport, pair) => only(viewport, pair),
+    matches: (viewport, pair) => is(viewport, pair),
     below,
     atMost,
-    only,
+    is,
     atLeast,
     above,
   };
@@ -96,7 +96,7 @@ export const createBreakpointDefinition = <const Scales extends BreakpointScales
 type ScaleEntry = readonly [name: string, threshold: number];
 type ValidatedScale = readonly [ScaleEntry, ...ScaleEntry[]];
 type ValidatedScales = Readonly<Record<BreakpointAxis, ValidatedScale>>;
-type BreakpointRelation = "below" | "atMost" | "only" | "atLeast" | "above";
+type BreakpointRelation = "below" | "atMost" | "is" | "atLeast" | "above";
 
 const breakpointAxes = ["width", "height"] as const;
 
@@ -198,7 +198,7 @@ const matchesRelation = (
   const current = matchScaleIndex(value, entries);
   if (relation === "below") return current < target;
   if (relation === "atMost") return current <= target;
-  if (relation === "only") return current === target;
+  if (relation === "is") return current === target;
   if (relation === "atLeast") return current >= target;
   return current > target;
 };

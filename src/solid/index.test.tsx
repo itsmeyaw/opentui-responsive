@@ -25,7 +25,7 @@ if (Bun.env.TYPE_TESTS) {
   viewport(["compact", "tall"]);
   width.below("wide");
   viewport.atMost(["compact", "tall"]);
-  height.only("short");
+  height.is("short");
   viewport.atLeast(["wide", "tall"]);
   height.above("short");
   // @ts-expect-error width-only names cannot be used for height comparisons
@@ -104,7 +104,7 @@ test("reactively compares one-axis and two-axis breakpoint relations", async () 
         {[
           viewport.below(["wide", "tall"]),
           viewport.atMost(["compact", "short"]),
-          viewport.only(["compact", "short"]),
+          viewport.is(["compact", "short"]),
           width.atLeast("wide"),
           viewport.above(["compact", "short"]),
         ]

@@ -97,7 +97,7 @@ const [width, height, viewport] = useBreakpoint();
 
 width.below("medium");
 viewport.atMost(["medium", "tall"]);
-height.only("short");
+height.is("short");
 viewport.atLeast(["medium", "medium"]);
 width.above("medium");
 
@@ -150,11 +150,11 @@ Relation methods compare complete tiers rather than their raw threshold values. 
 | --------- | ------------- |
 | `below`   | `<`           |
 | `atMost`  | `<=`          |
-| `only`    | `===`         |
+| `is`      | `===`         |
 | `atLeast` | `>=`          |
 | `above`   | `>`           |
 
-Width and height relation methods each accept a name from their own scale. Viewport relation methods accept `[width, height]` pairs and use AND semantics. Calling `viewport.only(["wide", "tall"])` is equivalent to calling `viewport(["wide", "tall"])`. The `/core` relation matchers retain `(viewport, axis, name)` and `(viewport, [width, height])` forms for adapter implementations.
+Width and height relation methods each accept a name from their own scale. Viewport relation methods accept `[width, height]` pairs and use AND semantics. Calling `viewport.is(["wide", "tall"])` is equivalent to calling `viewport(["wide", "tall"])`. The `/core` relation matchers retain `(viewport, axis, name)` and `(viewport, [width, height])` forms for adapter implementations.
 
 Use breakpoints for discrete layout modes. Keep continuous measurements such as progress-bar width and available list height on OpenTUI's `useTerminalDimensions()`.
 

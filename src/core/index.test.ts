@@ -80,8 +80,8 @@ test("compares the complete tier range on one axis", () => {
   expect(breakpoints.below(at(60), "width", "medium")).toBe(false);
   expect(breakpoints.atMost(at(99), "width", "medium")).toBe(true);
   expect(breakpoints.atMost(at(100), "width", "medium")).toBe(false);
-  expect(breakpoints.only(at(60), "width", "medium")).toBe(true);
-  expect(breakpoints.only(at(99), "width", "medium")).toBe(true);
+  expect(breakpoints.is(at(60), "width", "medium")).toBe(true);
+  expect(breakpoints.is(at(99), "width", "medium")).toBe(true);
   expect(breakpoints.atLeast(at(59), "width", "medium")).toBe(false);
   expect(breakpoints.atLeast(at(60), "width", "medium")).toBe(true);
   expect(breakpoints.above(at(99), "width", "medium")).toBe(false);
@@ -95,13 +95,13 @@ test("requires both axes to satisfy pair relations", () => {
   const medium = { width: 80, height: 16 };
   expect(breakpoints.below(medium, ["wide", "tall"])).toBe(true);
   expect(breakpoints.atMost(medium, ["medium", "medium"])).toBe(true);
-  expect(breakpoints.only(medium, ["medium", "medium"])).toBe(true);
+  expect(breakpoints.is(medium, ["medium", "medium"])).toBe(true);
   expect(breakpoints.atLeast(medium, ["medium", "medium"])).toBe(true);
   expect(breakpoints.above(medium, ["narrow", "short"])).toBe(true);
 
   expect(breakpoints.below({ width: 100, height: 16 }, ["wide", "tall"])).toBe(false);
   expect(breakpoints.atMost({ width: 100, height: 16 }, ["medium", "medium"])).toBe(false);
-  expect(breakpoints.only({ width: 80, height: 20 }, ["medium", "medium"])).toBe(false);
+  expect(breakpoints.is({ width: 80, height: 20 }, ["medium", "medium"])).toBe(false);
   expect(breakpoints.atLeast({ width: 80, height: 10 }, ["medium", "medium"])).toBe(false);
   expect(breakpoints.above({ width: 80, height: 10 }, ["narrow", "short"])).toBe(false);
 });

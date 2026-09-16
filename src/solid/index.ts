@@ -30,7 +30,7 @@ export type ResponsiveBreakpointAxisAccessor<
   (name: BreakpointMatch<Scales>[Axis]): boolean;
   readonly below: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
   readonly atMost: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
-  readonly only: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
+  readonly is: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
   readonly atLeast: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
   readonly above: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
 };
@@ -43,7 +43,7 @@ export type ResponsiveBreakpointViewportAccessor<
   (pair: BreakpointPair<Scales>): boolean;
   readonly below: (pair: BreakpointPair<Scales>) => boolean;
   readonly atMost: (pair: BreakpointPair<Scales>) => boolean;
-  readonly only: (pair: BreakpointPair<Scales>) => boolean;
+  readonly is: (pair: BreakpointPair<Scales>) => boolean;
   readonly atLeast: (pair: BreakpointPair<Scales>) => boolean;
   readonly above: (pair: BreakpointPair<Scales>) => boolean;
 };
@@ -84,7 +84,7 @@ export const createResponsiveTui = <const Scales extends BreakpointScales>(
       {
         below: bindViewportRelation<Scales>(dimensions, breakpoints.below),
         atMost: bindViewportRelation<Scales>(dimensions, breakpoints.atMost),
-        only: bindViewportRelation<Scales>(dimensions, breakpoints.only),
+        is: bindViewportRelation<Scales>(dimensions, breakpoints.is),
         atLeast: bindViewportRelation<Scales>(dimensions, breakpoints.atLeast),
         above: bindViewportRelation<Scales>(dimensions, breakpoints.above),
       },
@@ -119,11 +119,11 @@ const bindAxisAccessor = <Scales extends BreakpointScales, Axis extends Breakpoi
     (name?: BreakpointMatch<Scales>[Axis]) =>
       name === undefined
         ? breakpoints.match(viewport())[axis]
-        : breakpoints.only(viewport(), axis, name),
+        : breakpoints.is(viewport(), axis, name),
     {
       below: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.below),
       atMost: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.atMost),
-      only: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.only),
+      is: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.is),
       atLeast: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.atLeast),
       above: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.above),
     },

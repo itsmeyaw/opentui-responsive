@@ -28,7 +28,7 @@ export function Content() {
       <text marginTop={1}>Relations to medium/medium:</text>
       <text>{`below: ${viewport.below(medium)}`}</text>
       <text>{`atMost: ${viewport.atMost(medium)}`}</text>
-      <text>{`only: ${viewport.only(medium)}`}</text>
+      <text>{`is: ${viewport.is(medium)}`}</text>
       <text>{`atLeast: ${viewport.atLeast(medium)}`}</text>
       <text>{`above: ${viewport.above(medium)}`}</text>
     </box>
