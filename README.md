@@ -65,7 +65,7 @@ export function Content() {
   const hasMediumViewport = viewport.atLeast(["medium", "medium"]);
 
   return (
-    <box flexDirection={width() === "wide" ? "row" : "column"}>
+    <box flexDirection={width.is("wide") ? "row" : "column"}>
       <text>{`${width()}/${height()}`}</text>
       <text>
         {isWideAndTall || (isMediumOrWider && hasMediumViewport) ? "Full layout" : "Compact layout"}

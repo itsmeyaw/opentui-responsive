@@ -1,6 +1,6 @@
 {
   "name": "opentui-responsive",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Typed responsive breakpoints for OpenTUI.",
   "keywords": [
     "breakpoints",
