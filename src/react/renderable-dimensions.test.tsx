@@ -2,7 +2,7 @@
 /* oxlint-disable effecttsgo/async-function */
 import { testRender } from "@opentui/react/test-utils";
 import type { BoxProps, TextProps } from "@opentui/react";
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { act, createElement, useCallback, useState, type ComponentType } from "react";
 
 import { useRenderableDimensions } from "./index.ts";
@@ -125,7 +125,7 @@ test("measures without replacing onSizeChange and composes with another ref", as
   }
 });
 
-test("discards a queued measurement and removes listeners when destroyed", async () => {
+test("discards stale measurements and removes listeners when destroyed", async () => {
   type MeasurementTarget = NonNullable<
     Parameters<ReturnType<typeof useRenderableDimensions>[1]>[0]
   >;
@@ -151,6 +151,28 @@ test("discards a queued measurement and removes listeners when destroyed", async
     expect(dimensions).toEqual({ height: 1, width: 5 });
     expect(target.listenerCount("resize")).toBe(1);
     expect(target.listenerCount("destroyed")).toBe(1);
+
+    const scheduled: (() => void)[] = [];
+    const nextTick = spyOn(process, "nextTick").mockImplementation(((
+      callback: (...arguments_: unknown[]) => void,
+      ...arguments_: unknown[]
+    ) => {
+      scheduled.push(() => callback(...arguments_));
+    }) as typeof process.nextTick);
+    try {
+      Object.defineProperty(target, "width", { configurable: true, value: 6 });
+      target.emit("resize");
+      Object.defineProperty(target, "width", { configurable: true, value: 7 });
+      target.emit("resize");
+    } finally {
+      nextTick.mockRestore();
+    }
+
+    expect(scheduled).toHaveLength(2);
+    await act(async () => scheduled[0]?.());
+    expect(dimensions).toEqual({ height: 1, width: 5 });
+    await act(async () => scheduled[1]?.());
+    expect(dimensions).toEqual({ height: 1, width: 7 });
 
     await act(async () => {
       target.emit("resize");
