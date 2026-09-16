@@ -2,6 +2,7 @@
   <h1>opentui-responsive</h1>
   <p>
     <a href="https://www.npmjs.com/package/opentui-responsive"><img src="https://img.shields.io/npm/v/opentui-responsive" alt="npm version"></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-declarations-3178C6?logo=typescript&logoColor=white" alt="Includes TypeScript declarations"></a>
     <a href="https://github.com/itsmeyaw/opentui-responsive/actions/workflows/ci.yml"><img src="https://github.com/itsmeyaw/opentui-responsive/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
     <a href="https://github.com/itsmeyaw/opentui-responsive/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/opentui-responsive" alt="MIT license"></a>
   </p>
