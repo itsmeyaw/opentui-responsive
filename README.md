@@ -58,17 +58,15 @@ export function Layout(props: ParentProps) {
 import { useBreakpoint } from "./layout.tsx";
 
 export function Content() {
-  const breakpoint = useBreakpoint();
-  // You can use it to directly check [width, height] breakpoint
-  const isWideAndTall = breakpoint(["wide", "tall"]);
-  // Compare one axis, or compare both axes with AND semantics
-  const isMediumOrWider = breakpoint.atLeast("width", "medium");
-  const hasMediumViewport = breakpoint.atLeast(["medium", "medium"]);
+  const [width, height, viewport] = useBreakpoint();
+  // Each accessor can be named for its local use.
+  const isWideAndTall = viewport(["wide", "tall"]);
+  const isMediumOrWider = width.atLeast("medium");
+  const hasMediumViewport = viewport.atLeast(["medium", "medium"]);
 
   return (
-    // Or you can get the current width and height breakpoint
-    <box flexDirection={breakpoint().width === "wide" ? "row" : "column"}>
-      <text>{`${breakpoint().width}/${breakpoint().height}`}</text>
+    <box flexDirection={width() === "wide" ? "row" : "column"}>
+      <text>{`${width()}/${height()}`}</text>
       <text>
         {isWideAndTall || (isMediumOrWider && hasMediumViewport) ? "Full layout" : "Compact layout"}
       </text>
@@ -92,14 +90,19 @@ export function App() {
 }
 ```
 
-`useBreakpoint()` updates when the terminal crosses a configured threshold. Its accessor returns the current width and height names, accepts an exact `[width, height]` pair, and provides named relation methods. Relation methods accept either an axis and name or a pair; pair comparisons return true only when both axes satisfy the relation.
+`useBreakpoint()` updates when the terminal crosses a configured threshold. It returns `[width, height, viewport]`, letting each caller choose local names while keeping breakpoint names scoped to their axis. Width and height accept one breakpoint name; viewport accepts a `[width, height]` pair. Viewport pair comparisons return true only when both axes satisfy the relation.
 
 ```tsx
-breakpoint.below("width", "medium");
-breakpoint.atMost(["medium", "tall"]);
-breakpoint.only("height", "short");
-breakpoint.atLeast(["medium", "medium"]);
-breakpoint.above("width", "medium");
+const [width, height, viewport] = useBreakpoint();
+
+width.below("medium");
+viewport.atMost(["medium", "tall"]);
+height.only("short");
+viewport.atLeast(["medium", "medium"]);
+width.above("medium");
+
+const [sidebarWidth] = useBreakpoint();
+const [, , layoutViewport] = useBreakpoint();
 ```
 
 Run `bun run demo` from the package directory to try the Solid example. Resize the terminal to see its layout respond.
@@ -110,15 +113,16 @@ The React adapter has the same factory, provider, hook, and inferred breakpoint 
 
 ### `opentui-responsive/solid` and `opentui-responsive/react`
 
-| API                                   | Description                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------------- |
-| `createResponsiveTui(scales)`         | Validates the scales and creates a `ResponsiveTUI` provider and `useBreakpoint` hook. |
-| `ResponsiveTUI`                       | Tracks terminal dimensions and provides the current breakpoint accessor.              |
-| `useBreakpoint()`                     | Reads the accessor from the nearest generated provider.                               |
-| `ResponsiveBreakpointAccessor`        | Reads the current match or tests exact and relative breakpoint positions.             |
-| `ResponsiveBreakpointRelationMatcher` | Tests one axis or an AND-combined width and height pair.                              |
-| `ResponsiveTuiConfigurationError`     | Thrown when the supplied breakpoint scales are invalid.                               |
-| `ResponsiveTuiProviderError`          | Thrown when the generated hook is called outside its provider.                        |
+| API                                    | Description                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `createResponsiveTui(scales)`          | Validates the scales and creates a `ResponsiveTUI` provider and `useBreakpoint` hook. |
+| `ResponsiveTUI`                        | Tracks terminal dimensions and provides the current breakpoint accessor.              |
+| `useBreakpoint()`                      | Reads `[width, height, viewport]` from the nearest generated provider.                |
+| `ResponsiveBreakpointAccessor`         | The readonly `[width, height, viewport]` accessor tuple.                              |
+| `ResponsiveBreakpointAxisAccessor`     | Reads or compares one axis using that axis's breakpoint names.                        |
+| `ResponsiveBreakpointViewportAccessor` | Reads or compares the complete viewport using `[width, height]` pairs.                |
+| `ResponsiveTuiConfigurationError`      | Thrown when the supplied breakpoint scales are invalid.                               |
+| `ResponsiveTuiProviderError`           | Thrown when the generated hook is called outside its provider.                        |
 
 ### `opentui-responsive/core`
 
@@ -140,7 +144,7 @@ Width and height use independent sets of inclusive minimum thresholds measured i
 
 Declaration order does not affect matching. Each axis selects its highest satisfied threshold.
 
-Relation methods compare complete tiers rather than their raw threshold values. Given `width: { narrow: 0, medium: 60, wide: 100 }`, `atMost("width", "medium")` matches widths from `0` through `99`.
+Relation methods compare complete tiers rather than their raw threshold values. Given `width: { narrow: 0, medium: 60, wide: 100 }`, `width.atMost("medium")` matches widths from `0` through `99`.
 
 | Method    | Tier relation |
 | --------- | ------------- |
@@ -150,7 +154,7 @@ Relation methods compare complete tiers rather than their raw threshold values. 
 | `atLeast` | `>=`          |
 | `above`   | `>`           |
 
-Each method accepts `(axis, name)` for a single-axis comparison or `[width, height]` for a two-axis comparison. Two-axis comparisons use AND semantics. Calling `breakpoint.only(["wide", "tall"])` is equivalent to calling `breakpoint(["wide", "tall"])`.
+Width and height relation methods each accept a name from their own scale. Viewport relation methods accept `[width, height]` pairs and use AND semantics. Calling `viewport.only(["wide", "tall"])` is equivalent to calling `viewport(["wide", "tall"])`. The `/core` relation matchers retain `(viewport, axis, name)` and `(viewport, [width, height])` forms for adapter implementations.
 
 Use breakpoints for discrete layout modes. Keep continuous measurements such as progress-bar width and available list height on OpenTUI's `useTerminalDimensions()`.
 
