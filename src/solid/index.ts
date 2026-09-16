@@ -34,33 +34,41 @@ export const useRenderableDimensions = (): readonly [
 ] => {
   const [dimensions, setDimensions] = createSignal<RenderableDimensions>();
   let target: Renderable | undefined;
+  let removeListeners: (() => void) | undefined;
+  let revision = 0;
 
-  const detach = () => {
-    target?.off("resize", update);
-    target?.off("destroyed", detach);
+  const detach = (renderable: Renderable | undefined = target) => {
+    if (!renderable || target !== renderable) return;
+    revision += 1;
+    removeListeners?.();
+    removeListeners = undefined;
     target = undefined;
     setDimensions(undefined);
-  };
-
-  const update = () => {
-    const measured = target;
-    if (!measured) return;
-    const next = { width: measured.width, height: measured.height };
-
-    process.nextTick(() => {
-      if (target !== measured) return;
-      setDimensions((current) =>
-        current?.width === next.width && current.height === next.height ? current : next,
-      );
-    });
   };
 
   const ref = (renderable: Renderable) => {
     if (target === renderable) return;
     detach();
     target = renderable;
+    const update = () => {
+      const measurementRevision = ++revision;
+      const next = { width: renderable.width, height: renderable.height };
+
+      process.nextTick(() => {
+        if (target !== renderable || revision !== measurementRevision) return;
+        setDimensions((current) =>
+          current?.width === next.width && current.height === next.height ? current : next,
+        );
+      });
+    };
+    const destroyed = () => detach(renderable);
+
     renderable.on("resize", update);
-    renderable.on("destroyed", detach);
+    renderable.on("destroyed", destroyed);
+    removeListeners = () => {
+      renderable.off("resize", update);
+      renderable.off("destroyed", destroyed);
+    };
   };
 
   onCleanup(detach);

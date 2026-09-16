@@ -93,13 +93,17 @@ test("measures a renderable after layout and updates with its local size", async
 
 test("measures without replacing the renderable onSizeChange handler", async () => {
   let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
+  let refCalls = 0;
   let sizeChanges = 0;
   const App = () => {
     const measured = useRenderableDimensions();
     dimensions = measured[0];
     return (
       <box
-        ref={measured[1]}
+        ref={(renderable) => {
+          refCalls += 1;
+          measured[1](renderable);
+        }}
         height={2}
         onSizeChange={() => {
           sizeChanges += 1;
@@ -115,7 +119,55 @@ test("measures without replacing the renderable onSizeChange handler", async () 
     await setup.waitFor(() => dimensions() !== undefined);
 
     expect(dimensions()).toEqual({ height: 2, width: 7 });
+    expect(refCalls).toBe(1);
     expect(sizeChanges).toBe(1);
+  } finally {
+    setup.renderer.destroy();
+  }
+});
+
+test("discards a queued measurement when the same renderable is reattached", async () => {
+  type MeasurementTarget = Parameters<ReturnType<typeof useRenderableDimensions>[1]>[0];
+  let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
+  let dimensionsRef!: ReturnType<typeof useRenderableDimensions>[1];
+  let first!: MeasurementTarget;
+  let second!: MeasurementTarget;
+  const App = () => {
+    const measured = useRenderableDimensions();
+    dimensions = measured[0];
+    dimensionsRef = measured[1];
+    return (
+      <box>
+        <box
+          ref={(renderable) => {
+            first = renderable;
+            dimensionsRef(renderable);
+          }}
+          height={1}
+          width={5}
+        />
+        <box
+          ref={(renderable) => {
+            second = renderable;
+          }}
+          height={1}
+          width={9}
+        />
+      </box>
+    );
+  };
+  const setup = await testRender(() => <App />, { height: 4, width: 20 });
+
+  try {
+    await setup.renderOnce();
+    await setup.waitFor(() => dimensions()?.width === 5);
+
+    first.emit("resize");
+    dimensionsRef(second);
+    dimensionsRef(first);
+    await Bun.sleep(0);
+
+    expect(dimensions()).toBeUndefined();
   } finally {
     setup.renderer.destroy();
   }
