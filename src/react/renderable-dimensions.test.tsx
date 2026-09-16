@@ -25,11 +25,15 @@ if (Bun.env.TYPE_TESTS) {
 
 test("measures a renderable after layout and updates with its local size", async () => {
   let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
+  let dimensionsRef!: ReturnType<typeof useRenderableDimensions>[1];
+  let initialRef!: ReturnType<typeof useRenderableDimensions>[1];
   let setWidth!: (width: number) => void;
   const App = () => {
     const [width, updateWidth] = useState(8);
     const measured = useRenderableDimensions();
     dimensions = measured[0];
+    dimensionsRef = measured[1];
+    initialRef ||= measured[1];
     setWidth = updateWidth;
 
     return createElement(
@@ -57,6 +61,7 @@ test("measures a renderable after layout and updates with its local size", async
     await setup.renderOnce();
     await setup.flush();
     expect(dimensions).toEqual({ height: 2, width: 12 });
+    expect(dimensionsRef).toBe(initialRef);
     expect(setup.captureCharFrame()).toContain("12");
   } finally {
     act(() => setup.renderer.destroy());
@@ -66,13 +71,16 @@ test("measures a renderable after layout and updates with its local size", async
 test("measures without replacing onSizeChange and composes with another ref", async () => {
   let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
   let setWidth!: (width: number) => void;
+  let setVisible!: (visible: boolean) => void;
   let refCalls = 0;
   let sizeChanges = 0;
   const App = () => {
     const [width, updateWidth] = useState(7);
+    const [visible, updateVisible] = useState(true);
     const measured = useRenderableDimensions();
     dimensions = measured[0];
     setWidth = updateWidth;
+    setVisible = updateVisible;
     const composedRef = useCallback(
       (renderable: Parameters<(typeof measured)[1]>[0]) => {
         refCalls += 1;
@@ -80,14 +88,16 @@ test("measures without replacing onSizeChange and composes with another ref", as
       },
       [measured[1]],
     );
-    return createElement(Box, {
-      ref: composedRef,
-      height: 2,
-      onSizeChange: () => {
-        sizeChanges += 1;
-      },
-      width,
-    });
+    return visible
+      ? createElement(Box, {
+          ref: composedRef,
+          height: 2,
+          onSizeChange: () => {
+            sizeChanges += 1;
+          },
+          width,
+        })
+      : null;
   };
   const setup = await testRender(createElement(App), { height: 4, width: 20 });
 
@@ -105,6 +115,52 @@ test("measures without replacing onSizeChange and composes with another ref", as
     expect(dimensions).toEqual({ height: 2, width: 8 });
     expect(refCalls).toBe(1);
     expect(sizeChanges).toBe(1);
+
+    await act(async () => {
+      setVisible(false);
+    });
+    expect(dimensions).toBeUndefined();
+  } finally {
+    act(() => setup.renderer.destroy());
+  }
+});
+
+test("discards a queued measurement and removes listeners when destroyed", async () => {
+  type MeasurementTarget = NonNullable<
+    Parameters<ReturnType<typeof useRenderableDimensions>[1]>[0]
+  >;
+  let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
+  let target!: MeasurementTarget;
+  const App = () => {
+    const measured = useRenderableDimensions();
+    dimensions = measured[0];
+    const ref = useCallback(
+      (renderable: MeasurementTarget | null) => {
+        if (!renderable) return;
+        target = renderable;
+        return measured[1](renderable);
+      },
+      [measured[1]],
+    );
+    return createElement(Box, { height: 1, ref, width: 5 });
+  };
+  const setup = await testRender(createElement(App), { height: 4, width: 20 });
+
+  try {
+    await act(async () => Bun.sleep(0));
+    expect(dimensions).toEqual({ height: 1, width: 5 });
+    expect(target.listenerCount("resize")).toBe(1);
+    expect(target.listenerCount("destroyed")).toBe(1);
+
+    await act(async () => {
+      target.emit("resize");
+      target.emit("destroyed");
+      await Bun.sleep(0);
+    });
+
+    expect(dimensions).toBeUndefined();
+    expect(target.listenerCount("resize")).toBe(0);
+    expect(target.listenerCount("destroyed")).toBe(0);
   } finally {
     act(() => setup.renderer.destroy());
   }
