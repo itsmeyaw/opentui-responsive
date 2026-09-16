@@ -73,12 +73,16 @@
     "typescript": "5.9.3"
   },
   "peerDependencies": {
+    "@opentui/core": "^0.5.11",
     "@opentui/react": "^0.5.11",
     "@opentui/solid": "^0.5.11",
     "react": ">=19.2.0",
     "solid-js": "1.9.12"
   },
   "peerDependenciesMeta": {
+    "@opentui/core": {
+      "optional": true
+    },
     "@opentui/react": {
       "optional": true
     },

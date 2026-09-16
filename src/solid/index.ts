@@ -1,5 +1,13 @@
 import { useTerminalDimensions } from "@opentui/solid";
-import { createContext, useContext, type ParentProps } from "solid-js";
+import type { Renderable } from "@opentui/core";
+import {
+  createContext,
+  createSignal,
+  onCleanup,
+  useContext,
+  type Accessor,
+  type ParentProps,
+} from "solid-js";
 
 import {
   createBreakpointDefinition,
@@ -12,6 +20,52 @@ import {
 } from "../core/index.js";
 
 export { ResponsiveTuiConfigurationError } from "../core/index.js";
+
+/** Yoga-computed dimensions for one OpenTUI renderable. */
+export interface RenderableDimensions {
+  readonly width: number;
+  readonly height: number;
+}
+
+/** Tracks the Yoga-computed dimensions of the renderable assigned to the returned ref. */
+export const useRenderableDimensions = (): readonly [
+  dimensions: Accessor<RenderableDimensions | undefined>,
+  ref: (renderable: Renderable) => void,
+] => {
+  const [dimensions, setDimensions] = createSignal<RenderableDimensions>();
+  let target: Renderable | undefined;
+
+  const detach = () => {
+    target?.off("resize", update);
+    target?.off("destroyed", detach);
+    target = undefined;
+    setDimensions(undefined);
+  };
+
+  const update = () => {
+    const measured = target;
+    if (!measured) return;
+    const next = { width: measured.width, height: measured.height };
+
+    process.nextTick(() => {
+      if (target !== measured) return;
+      setDimensions((current) =>
+        current?.width === next.width && current.height === next.height ? current : next,
+      );
+    });
+  };
+
+  const ref = (renderable: Renderable) => {
+    if (target === renderable) return;
+    detach();
+    target = renderable;
+    renderable.on("resize", update);
+    renderable.on("destroyed", detach);
+  };
+
+  onCleanup(detach);
+  return [dimensions, ref];
+};
 
 /** A reactive Solid breakpoint relation test for one axis. */
 export type ResponsiveBreakpointAxisRelationMatcher<

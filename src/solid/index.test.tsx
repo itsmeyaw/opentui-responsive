@@ -7,6 +7,7 @@ import {
   createResponsiveTui,
   ResponsiveTuiConfigurationError,
   ResponsiveTuiProviderError,
+  useRenderableDimensions,
 } from "./index.ts";
 
 const responsiveTui = createResponsiveTui({
@@ -15,6 +16,16 @@ const responsiveTui = createResponsiveTui({
 });
 
 if (Bun.env.TYPE_TESTS) {
+  const [dimensions, dimensionsRef] = useRenderableDimensions();
+  const measuredWidth: number | undefined = dimensions()?.width;
+  void measuredWidth;
+  <box ref={dimensionsRef} />;
+  // @ts-expect-error dimensions are unavailable before the first layout measurement
+  const unguardedWidth: number = dimensions().width;
+  // @ts-expect-error only layout renderables can be measured
+  dimensionsRef({});
+  void unguardedWidth;
+
   const [width, height, viewport] = responsiveTui.useBreakpoint();
   // @ts-expect-error width-only names cannot be compared with height
   const widthNameComparedWithHeight = height() === "wide";
@@ -43,6 +54,110 @@ if (Bun.env.TYPE_TESTS) {
   // @ts-expect-error pairs contain exactly two axes
   viewport(["compact", "tall", "extra"]);
 }
+
+test("measures a renderable after layout and updates with its local size", async () => {
+  let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
+  let setWidth!: (width: number) => void;
+  const App = () => {
+    const [width, updateWidth] = createSignal(8);
+    const measured = useRenderableDimensions();
+    dimensions = measured[0];
+    const ref = measured[1];
+    setWidth = updateWidth;
+
+    return (
+      <box ref={ref} height={2} width={width()}>
+        <text>{dimensions()?.width ?? "pending"}</text>
+      </box>
+    );
+  };
+  const setup = await testRender(() => <App />, { height: 4, width: 20 });
+
+  try {
+    expect(dimensions()).toBeUndefined();
+
+    await setup.renderOnce();
+    await setup.flush();
+    expect(dimensions()).toEqual({ height: 2, width: 8 });
+    expect(setup.captureCharFrame()).toContain("8");
+
+    setWidth(12);
+    await setup.waitFor(() => dimensions()?.width === 12);
+    await setup.flush();
+    expect(dimensions()).toEqual({ height: 2, width: 12 });
+    expect(setup.captureCharFrame()).toContain("12");
+  } finally {
+    setup.renderer.destroy();
+  }
+});
+
+test("measures without replacing the renderable onSizeChange handler", async () => {
+  let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
+  let sizeChanges = 0;
+  const App = () => {
+    const measured = useRenderableDimensions();
+    dimensions = measured[0];
+    return (
+      <box
+        ref={measured[1]}
+        height={2}
+        onSizeChange={() => {
+          sizeChanges += 1;
+        }}
+        width={7}
+      />
+    );
+  };
+  const setup = await testRender(() => <App />, { height: 4, width: 20 });
+
+  try {
+    await setup.renderOnce();
+    await setup.waitFor(() => dimensions() !== undefined);
+
+    expect(dimensions()).toEqual({ height: 2, width: 7 });
+    expect(sizeChanges).toBe(1);
+  } finally {
+    setup.renderer.destroy();
+  }
+});
+
+test("resets dimensions when its renderable is replaced or destroyed", async () => {
+  let dimensions!: ReturnType<typeof useRenderableDimensions>[0];
+  let setTarget!: (target: "first" | "second" | "none") => void;
+  const App = () => {
+    const [target, updateTarget] = createSignal<"first" | "second" | "none">("first");
+    const measured = useRenderableDimensions();
+    dimensions = measured[0];
+    setTarget = updateTarget;
+
+    return (
+      <box>
+        {target() === "first" ? (
+          <box ref={measured[1]} height={1} width={5} />
+        ) : target() === "second" ? (
+          <box ref={measured[1]} height={2} width={9} />
+        ) : null}
+      </box>
+    );
+  };
+  const setup = await testRender(() => <App />, { height: 4, width: 20 });
+
+  try {
+    await setup.renderOnce();
+    await setup.waitFor(() => dimensions()?.width === 5);
+
+    setTarget("second");
+    expect(dimensions()).toBeUndefined();
+    await setup.waitFor(() => dimensions()?.width === 9);
+    expect(dimensions()).toEqual({ height: 2, width: 9 });
+
+    setTarget("none");
+    await setup.waitFor(() => dimensions() === undefined);
+    expect(dimensions()).toBeUndefined();
+  } finally {
+    setup.renderer.destroy();
+  }
+});
 
 test("provides the initial breakpoint and updates it after a resize", async () => {
   const App = () => {
