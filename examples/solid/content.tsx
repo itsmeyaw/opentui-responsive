@@ -1,9 +1,16 @@
+import { useRenderableDimensions } from "../../src/solid/index.ts";
+
 import { useBreakpoint } from "./layout.tsx";
 
 export function Content() {
   const [width, height, viewport] = useBreakpoint();
+  const [panelDimensions, panelRef] = useRenderableDimensions();
   const wideAndTall = () => viewport(["wide", "tall"]);
   const medium = ["medium", "medium"] as const;
+  const panelSize = () => {
+    const dimensions = panelDimensions();
+    return dimensions ? `${dimensions.width}x${dimensions.height}` : "measuring";
+  };
 
   return (
     <box flexDirection="column" flexGrow={1} padding={1}>
@@ -16,10 +23,12 @@ export function Content() {
         marginTop={1}
         paddingLeft={1}
         paddingRight={1}
+        ref={panelRef}
       >
         <text flexGrow={1}>Width: {width()}</text>
         <text flexGrow={1}>Height: {height()}</text>
       </box>
+      <text fg="gray">Measured panel: {panelSize()}</text>
       <text fg={wideAndTall() ? "green" : "yellow"} marginTop={1}>
         {wideAndTall()
           ? "Wide and tall layout active."
