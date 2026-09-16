@@ -1,5 +1,15 @@
 import { useTerminalDimensions } from "@opentui/react";
-import { createContext, createElement, useContext, type PropsWithChildren } from "react";
+import type { Renderable } from "@opentui/core";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+  type PropsWithChildren,
+  type RefCallback,
+} from "react";
 
 import {
   createBreakpointDefinition,
@@ -12,6 +22,67 @@ import {
 } from "../core/index.js";
 
 export { ResponsiveTuiConfigurationError } from "../core/index.js";
+
+/** Yoga-computed dimensions for one OpenTUI renderable. */
+export interface RenderableDimensions {
+  readonly width: number;
+  readonly height: number;
+}
+
+/** Tracks the Yoga-computed dimensions of the renderable assigned to the returned ref. */
+export const useRenderableDimensions = (): readonly [
+  dimensions: RenderableDimensions | undefined,
+  ref: RefCallback<Renderable>,
+] => {
+  const [dimensions, setDimensions] = useState<RenderableDimensions>();
+  const target = useRef<Renderable | undefined>(undefined);
+  const removeListeners = useRef<(() => void) | undefined>(undefined);
+  const revision = useRef(0);
+
+  const ref = useCallback<RefCallback<Renderable>>((renderable) => {
+    const detach = (measured: Renderable | undefined = target.current) => {
+      if (!measured || target.current !== measured) return;
+      revision.current += 1;
+      removeListeners.current?.();
+      removeListeners.current = undefined;
+      target.current = undefined;
+      setDimensions(undefined);
+    };
+
+    if (!renderable) {
+      detach();
+      return;
+    }
+    if (target.current === renderable) return () => detach(renderable);
+    detach();
+    target.current = renderable;
+
+    const update = () => {
+      const measurementRevision = ++revision.current;
+      const next = { width: renderable.width, height: renderable.height };
+
+      process.nextTick(() => {
+        if (target.current !== renderable || revision.current !== measurementRevision) return;
+        setDimensions((current) =>
+          current?.width === next.width && current.height === next.height ? current : next,
+        );
+      });
+    };
+    const destroyed = () => detach(renderable);
+
+    renderable.on("resize", update);
+    renderable.on("destroyed", destroyed);
+    removeListeners.current = () => {
+      renderable.off("resize", update);
+      renderable.off("destroyed", destroyed);
+    };
+    update();
+
+    return () => detach(renderable);
+  }, []);
+
+  return [dimensions, ref];
+};
 
 /** A React breakpoint relation test for one axis. */
 export type ResponsiveBreakpointAxisRelationMatcher<

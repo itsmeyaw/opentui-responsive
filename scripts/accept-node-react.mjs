@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { createResponsiveTui } from "opentui-responsive/react";
+import { createResponsiveTui, useRenderableDimensions } from "opentui-responsive/react";
 
 const responsive = createResponsiveTui({
   width: { narrow: 0, wide: 80 },
@@ -9,3 +9,4 @@ const responsive = createResponsiveTui({
 
 assert.equal(typeof responsive.ResponsiveTUI, "function");
 assert.equal(typeof responsive.useBreakpoint, "function");
+assert.equal(typeof useRenderableDimensions, "function");
