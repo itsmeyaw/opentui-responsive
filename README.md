@@ -16,9 +16,9 @@
 For OpenTUI Solid applications:
 
 ```sh
-bun add opentui-responsive @opentui/solid solid-js
+bun add opentui-responsive @opentui/core @opentui/solid solid-js
 # or
-npm install opentui-responsive @opentui/solid solid-js
+npm install opentui-responsive @opentui/core @opentui/solid solid-js
 ```
 
 For OpenTUI React applications:
@@ -105,6 +105,35 @@ const [sidebarWidth] = useBreakpoint();
 const [, , layoutViewport] = useBreakpoint();
 ```
 
+### Measuring Local Layouts
+
+Solid applications can measure a renderable after Yoga computes its local layout:
+
+```tsx
+import { useRenderableDimensions } from "opentui-responsive/solid";
+
+export function Panel() {
+  const [dimensions, ref] = useRenderableDimensions();
+  const size = () => {
+    const current = dimensions();
+    return current ? `${current.width}x${current.height}` : "measuring";
+  };
+
+  return (
+    <box flexDirection="column">
+      <box ref={ref} border={true}>
+        <text>Panel content</text>
+      </box>
+      <text>Panel size: {size()}</text>
+    </box>
+  );
+}
+```
+
+`dimensions()` is `undefined` until the current renderable completes its first layout, then updates when its computed size changes. Keep the measured renderable visible and participating in layout; conditionally render its contents or a sibling fallback instead of hiding the measured renderable itself. Dimension-dependent output appears in a follow-up frame because OpenTUI reports size changes during its render pass.
+
+The returned ref uses the renderable's additive resize event, so it does not replace `onSizeChange`. Compose refs manually if the same renderable also needs another ref callback.
+
 Run `bun run demo` from the package directory to try the Solid example. Resize the terminal to see its layout respond.
 
 The React adapter has the same factory, provider, hook, and inferred breakpoint types; import `createResponsiveTui` from `opentui-responsive/react` instead. Use `PropsWithChildren` for the layout's props.
@@ -123,6 +152,8 @@ The React adapter has the same factory, provider, hook, and inferred breakpoint 
 | `ResponsiveBreakpointViewportAccessor` | Reads or compares the complete viewport using `[width, height]` pairs.                |
 | `ResponsiveTuiConfigurationError`      | Thrown when the supplied breakpoint scales are invalid.                               |
 | `ResponsiveTuiProviderError`           | Thrown when the generated hook is called outside its provider.                        |
+| `useRenderableDimensions()`            | Solid only: tracks the Yoga-computed size of the renderable assigned to its ref.      |
+| `RenderableDimensions`                 | Solid only: the measured renderable width and height in terminal cells.               |
 
 ### `opentui-responsive/core`
 
@@ -156,7 +187,7 @@ Relation methods compare complete tiers rather than their raw threshold values. 
 
 Width and height relation methods each accept a name from their own scale. Viewport relation methods accept `[width, height]` pairs and use AND semantics. Calling `viewport.is(["wide", "tall"])` is equivalent to calling `viewport(["wide", "tall"])`. The `/core` relation matchers retain `(viewport, axis, name)` and `(viewport, [width, height])` forms for adapter implementations.
 
-Use breakpoints for discrete layout modes. Keep continuous measurements such as progress-bar width and available list height on OpenTUI's `useTerminalDimensions()`.
+Use breakpoints for discrete layout modes. Use OpenTUI's `useTerminalDimensions()` when viewport dimensions are sufficient, and Solid's `useRenderableDimensions()` when local Yoga constraints determine the available space.
 
 ## Runtime Support
 
