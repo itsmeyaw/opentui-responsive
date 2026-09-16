@@ -22,39 +22,39 @@ const responsiveTui = createResponsiveTui({
 });
 
 if (Bun.env.TYPE_TESTS) {
-  const breakpoint = responsiveTui.useBreakpoint();
+  const [width, height, viewport] = responsiveTui.useBreakpoint();
   // @ts-expect-error width-only names cannot be compared with height
-  const widthNameComparedWithHeight = breakpoint().height === "wide";
+  const widthNameComparedWithHeight = height() === "wide";
   // @ts-expect-error unconfigured height names cannot be compared
-  const invalidHeightComparison = breakpoint().height === "extra-tall";
+  const invalidHeightComparison = height() === "extra-tall";
   void widthNameComparedWithHeight;
   void invalidHeightComparison;
-  breakpoint(["compact", "tall"]);
-  breakpoint.below("width", "wide");
-  breakpoint.atMost(["compact", "tall"]);
-  breakpoint.only("height", "short");
-  breakpoint.atLeast(["wide", "tall"]);
-  breakpoint.above("height", "short");
+  viewport(["compact", "tall"]);
+  width.below("wide");
+  viewport.atMost(["compact", "tall"]);
+  height.only("short");
+  viewport.atLeast(["wide", "tall"]);
+  height.above("short");
   // @ts-expect-error width-only names cannot be used for height comparisons
-  breakpoint.atLeast("height", "wide");
+  height.atLeast("wide");
   // @ts-expect-error pair order is width then height
-  breakpoint.above(["short", "wide"]);
+  viewport.above(["short", "wide"]);
   // @ts-expect-error both axis scales are required
   createResponsiveTui({ width: { compact: 0 } });
   // @ts-expect-error each axis scale must include zero
   createResponsiveTui({ width: { compact: 1 }, height: { short: 0 } });
   // @ts-expect-error pair order is width then height
-  breakpoint(["short", "wide"]);
+  viewport(["short", "wide"]);
   // @ts-expect-error pairs require both axes
-  breakpoint(["compact"]);
+  viewport(["compact"]);
   // @ts-expect-error pairs contain exactly two axes
-  breakpoint(["compact", "tall", "extra"]);
+  viewport(["compact", "tall", "extra"]);
 }
 
 test("provides the initial breakpoint and updates it after a resize", async () => {
   const App = () => {
-    const breakpoint = responsiveTui.useBreakpoint();
-    return createElement("text", null, `${breakpoint().width}/${breakpoint().height}`);
+    const [width, height] = responsiveTui.useBreakpoint();
+    return createElement("text", null, `${width()}/${height()}`);
   };
   const setup = await testRender(
     createElement(responsiveTui.ResponsiveTUI, null, createElement(App)),
@@ -77,11 +77,11 @@ test("provides the initial breakpoint and updates it after a resize", async () =
 
 test("reactively matches an exact width and height pair", async () => {
   const App = () => {
-    const breakpoint = responsiveTui.useBreakpoint();
+    const [, , viewport] = responsiveTui.useBreakpoint();
     return createElement(
       "text",
       null,
-      `${breakpoint(["compact", "short"])}/${breakpoint(["wide", "tall"])}`,
+      `${viewport(["compact", "short"])}/${viewport(["wide", "tall"])}`,
     );
   };
   const setup = await testRender(
@@ -105,16 +105,16 @@ test("reactively matches an exact width and height pair", async () => {
 
 test("reactively compares one-axis and two-axis breakpoint relations", async () => {
   const App = () => {
-    const breakpoint = responsiveTui.useBreakpoint();
+    const [width, , viewport] = responsiveTui.useBreakpoint();
     return createElement(
       "text",
       null,
       [
-        breakpoint.below(["wide", "tall"]),
-        breakpoint.atMost(["compact", "short"]),
-        breakpoint.only(["compact", "short"]),
-        breakpoint.atLeast("width", "wide"),
-        breakpoint.above(["compact", "short"]),
+        viewport.below(["wide", "tall"]),
+        viewport.atMost(["compact", "short"]),
+        viewport.only(["compact", "short"]),
+        width.atLeast("wide"),
+        viewport.above(["compact", "short"]),
       ]
         .map((value) => Number(value))
         .join("/"),
@@ -142,10 +142,10 @@ test("reactively compares one-axis and two-axis breakpoint relations", async () 
 test("keeps child state when the breakpoint changes", async () => {
   let increment!: () => void;
   const Child = () => {
-    const breakpoint = responsiveTui.useBreakpoint();
+    const [width, height] = responsiveTui.useBreakpoint();
     const [count, setCount] = useState(0);
     increment = () => setCount((value) => value + 1);
-    return createElement("text", null, `${breakpoint().width}/${breakpoint().height}:${count}`);
+    return createElement("text", null, `${width()}/${height()}:${count}`);
   };
   const setup = await testRender(
     createElement(responsiveTui.ResponsiveTUI, null, createElement(Child)),
@@ -214,9 +214,9 @@ test("keeps contexts created by different factories isolated", async () => {
     height: { low: 0, high: 10 },
   });
   const App = () => {
-    const breakpoint = responsiveTui.useBreakpoint();
-    const otherBreakpoint = otherResponsiveTui.useBreakpoint();
-    return createElement("text", null, `${breakpoint().width}/${otherBreakpoint().width}`);
+    const [width] = responsiveTui.useBreakpoint();
+    const [otherWidth] = otherResponsiveTui.useBreakpoint();
+    return createElement("text", null, `${width()}/${otherWidth()}`);
   };
   const setup = await testRender(
     createElement(

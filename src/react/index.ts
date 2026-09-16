@@ -13,24 +13,48 @@ import {
 
 export { ResponsiveTuiConfigurationError } from "../core/index.js";
 
-/** A React breakpoint relation test for one axis or both axes. */
-export type ResponsiveBreakpointRelationMatcher<
+/** A React breakpoint relation test for one axis. */
+export type ResponsiveBreakpointAxisRelationMatcher<
   Scales extends BreakpointScales = BreakpointScales,
+  Axis extends BreakpointAxis = BreakpointAxis,
 > = {
-  <Axis extends BreakpointAxis>(axis: Axis, name: BreakpointMatch<Scales>[Axis]): boolean;
-  (pair: BreakpointPair<Scales>): boolean;
+  (name: BreakpointMatch<Scales>[Axis]): boolean;
 };
 
-/** A React accessor that reads or tests the current breakpoint pair. */
-export type ResponsiveBreakpointAccessor<Scales extends BreakpointScales = BreakpointScales> = {
+/** A React accessor that reads or tests one breakpoint axis. */
+export type ResponsiveBreakpointAxisAccessor<
+  Scales extends BreakpointScales = BreakpointScales,
+  Axis extends BreakpointAxis = BreakpointAxis,
+> = {
+  (): BreakpointMatch<Scales>[Axis];
+  (name: BreakpointMatch<Scales>[Axis]): boolean;
+  readonly below: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
+  readonly atMost: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
+  readonly only: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
+  readonly atLeast: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
+  readonly above: ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
+};
+
+/** A React accessor that reads or tests the complete breakpoint viewport. */
+export type ResponsiveBreakpointViewportAccessor<
+  Scales extends BreakpointScales = BreakpointScales,
+> = {
   (): BreakpointMatch<Scales>;
   (pair: BreakpointPair<Scales>): boolean;
-  readonly below: ResponsiveBreakpointRelationMatcher<Scales>;
-  readonly atMost: ResponsiveBreakpointRelationMatcher<Scales>;
-  readonly only: ResponsiveBreakpointRelationMatcher<Scales>;
-  readonly atLeast: ResponsiveBreakpointRelationMatcher<Scales>;
-  readonly above: ResponsiveBreakpointRelationMatcher<Scales>;
+  readonly below: (pair: BreakpointPair<Scales>) => boolean;
+  readonly atMost: (pair: BreakpointPair<Scales>) => boolean;
+  readonly only: (pair: BreakpointPair<Scales>) => boolean;
+  readonly atLeast: (pair: BreakpointPair<Scales>) => boolean;
+  readonly above: (pair: BreakpointPair<Scales>) => boolean;
 };
+
+/** React breakpoint accessors in width, height, then viewport order. */
+export type ResponsiveBreakpointAccessor<Scales extends BreakpointScales = BreakpointScales> =
+  readonly [
+    width: ResponsiveBreakpointAxisAccessor<Scales, "width">,
+    height: ResponsiveBreakpointAxisAccessor<Scales, "height">,
+    viewport: ResponsiveBreakpointViewportAccessor<Scales>,
+  ];
 
 /* oxlint-disable effecttsgo/extends-native-error */
 /** Thrown when a responsive hook is used outside its generated React provider. */
@@ -54,19 +78,20 @@ export const createResponsiveTui = <const Scales extends BreakpointScales>(
 
   const ResponsiveTUI = (props: PropsWithChildren) => {
     const dimensions = useTerminalDimensions();
-    const bind = (relation: BreakpointRelationMatcher<Scales>) =>
-      bindRelation<Scales>(() => dimensions, relation);
-    const breakpoint = Object.assign(
+    const width = bindAxisAccessor<Scales, "width">("width", () => dimensions, breakpoints);
+    const height = bindAxisAccessor<Scales, "height">("height", () => dimensions, breakpoints);
+    const viewport = Object.assign(
       (pair?: BreakpointPair<Scales>) =>
         pair ? breakpoints.matches(dimensions, pair) : breakpoints.match(dimensions),
       {
-        below: bind(breakpoints.below),
-        atMost: bind(breakpoints.atMost),
-        only: bind(breakpoints.only),
-        atLeast: bind(breakpoints.atLeast),
-        above: bind(breakpoints.above),
+        below: bindViewportRelation<Scales>(() => dimensions, breakpoints.below),
+        atMost: bindViewportRelation<Scales>(() => dimensions, breakpoints.atMost),
+        only: bindViewportRelation<Scales>(() => dimensions, breakpoints.only),
+        atLeast: bindViewportRelation<Scales>(() => dimensions, breakpoints.atLeast),
+        above: bindViewportRelation<Scales>(() => dimensions, breakpoints.above),
       },
-    ) as ResponsiveBreakpointAccessor<Scales>;
+    ) as ResponsiveBreakpointViewportAccessor<Scales>;
+    const breakpoint: ResponsiveBreakpointAccessor<Scales> = [width, height, viewport];
 
     return createElement(ResponsiveTuiContext.Provider, { value: breakpoint }, props.children);
   };
@@ -82,13 +107,37 @@ export const createResponsiveTui = <const Scales extends BreakpointScales>(
   return { ResponsiveTUI, useBreakpoint };
 };
 
-const bindRelation = <Scales extends BreakpointScales>(
+const bindAxisAccessor = <Scales extends BreakpointScales, Axis extends BreakpointAxis>(
+  axis: Axis,
+  viewport: () => BreakpointViewport,
+  breakpoints: ReturnType<typeof createBreakpointDefinition<Scales>>,
+): ResponsiveBreakpointAxisAccessor<Scales, Axis> =>
+  Object.assign(
+    (name?: BreakpointMatch<Scales>[Axis]) =>
+      name === undefined
+        ? breakpoints.match(viewport())[axis]
+        : breakpoints.only(viewport(), axis, name),
+    {
+      below: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.below),
+      atMost: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.atMost),
+      only: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.only),
+      atLeast: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.atLeast),
+      above: bindAxisRelation<Scales, Axis>(axis, viewport, breakpoints.above),
+    },
+  ) as ResponsiveBreakpointAxisAccessor<Scales, Axis>;
+
+const bindAxisRelation = <Scales extends BreakpointScales, Axis extends BreakpointAxis>(
+  axis: Axis,
   viewport: () => BreakpointViewport,
   relation: BreakpointRelationMatcher<Scales>,
-): ResponsiveBreakpointRelationMatcher<Scales> =>
-  ((axisOrPair: BreakpointAxis | BreakpointPair<Scales>, name?: string) => {
-    if (typeof axisOrPair !== "string") {
-      return relation(viewport(), axisOrPair);
-    }
-    return relation(viewport(), axisOrPair, name as BreakpointMatch<Scales>[typeof axisOrPair]);
-  }) as ResponsiveBreakpointRelationMatcher<Scales>;
+): ResponsiveBreakpointAxisRelationMatcher<Scales, Axis> =>
+  ((name: BreakpointMatch<Scales>[Axis]) =>
+    relation(viewport(), axis, name)) as ResponsiveBreakpointAxisRelationMatcher<Scales, Axis>;
+
+const bindViewportRelation =
+  <Scales extends BreakpointScales>(
+    viewport: () => BreakpointViewport,
+    relation: BreakpointRelationMatcher<Scales>,
+  ): ((pair: BreakpointPair<Scales>) => boolean) =>
+  (pair) =>
+    relation(viewport(), pair);
