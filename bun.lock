@@ -11,7 +11,7 @@
         "@opentui/solid": "0.5.11",
         "@types/bun": "latest",
         "@types/react": "19.2.0",
-        "oxfmt": "latest",
+        "oxfmt": "0.68.0",
         "oxlint": "1.82.0",
         "publint": "0.3.24",
         "react": "19.2.0",
